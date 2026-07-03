@@ -1,0 +1,43 @@
+import SwiftUI
+
+struct CheckinHistoryView: View {
+    @StateObject private var viewModel = CheckinHistoryViewModel()
+
+    var body: some View {
+        Group {
+            if viewModel.isLoading && viewModel.items.isEmpty {
+                LoadingView(title: L10n.loading)
+            } else if let error = viewModel.error, viewModel.items.isEmpty {
+                ErrorBannerView(message: error.userMessage) {
+                    Task { await viewModel.load() }
+                }
+                .padding(CVSpacing.lg)
+            } else if viewModel.items.isEmpty {
+                EmptyStateView(title: L10n.text("history.empty"), systemImage: "clock")
+            } else {
+                List(viewModel.items) { item in
+                    VStack(alignment: .leading, spacing: CVSpacing.sm) {
+                        HStack {
+                            Text(DateFormatters.shortDateTime.string(from: item.checkedInAt))
+                                .font(.headline)
+                            Spacer()
+                            RiskBadge(level: item.riskLevel)
+                        }
+                        Text(item.patientMessage ?? L10n.text("patient.checkin.sent"))
+                            .font(CVFont.patientBody)
+                        if let summary = item.summaryForPatient {
+                            Text(summary)
+                                .font(.body)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .padding(.vertical, CVSpacing.sm)
+                }
+                .listStyle(PlainListStyle())
+                .refreshable { await viewModel.load() }
+            }
+        }
+        .navigationTitle(L10n.history)
+        .task { await viewModel.load() }
+    }
+}

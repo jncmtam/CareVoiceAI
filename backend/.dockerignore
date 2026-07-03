@@ -1,0 +1,8 @@
+.venv
+*.db
+test_*.db
+storage
+.pytest_cache
+__pycache__
+*.egg-info
+

@@ -1,0 +1,14 @@
+# Python/backend
+backend/.venv/
+backend/*.db
+backend/test_*.db
+backend/storage/
+backend/.pytest_cache/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/*.egg-info/
+
+# macOS/Xcode local noise
+.DS_Store
+xcuserdata/
+

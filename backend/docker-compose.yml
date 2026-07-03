@@ -1,0 +1,48 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      APP_ENV: local
+      API_V1_PREFIX: /api/v1
+      DATABASE_URL: postgresql+asyncpg://carevoice:carevoice@postgres:5432/carevoice
+      AUTO_CREATE_TABLES: "true"
+      SEED_DEMO_DATA: "true"
+      JWT_SECRET_KEY: change-me-before-deploy
+      CORS_ORIGINS: http://127.0.0.1:8000,http://localhost:8000
+      MEDIA_BASE_URL: http://127.0.0.1:8000
+      LOCAL_STORAGE_DIR: /app/storage
+    volumes:
+      - carevoice_media:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: carevoice
+      POSTGRES_USER: carevoice
+      POSTGRES_PASSWORD: carevoice
+    ports:
+      - "5432:5432"
+    volumes:
+      - carevoice_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U carevoice -d carevoice"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  carevoice_postgres:
+  carevoice_media:
+
