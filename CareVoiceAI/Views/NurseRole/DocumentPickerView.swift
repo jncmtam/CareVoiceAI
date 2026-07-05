@@ -5,7 +5,7 @@ struct DocumentPickerView: UIViewControllerRepresentable {
     let onPick: (URL) -> Void
 
     func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
-        let types: [UTType] = [.pdf, .image]
+        let types: [UTType] = [.pdf, .image, UTType(filenameExtension: "docx") ?? .data]
         let controller = UIDocumentPickerViewController(forOpeningContentTypes: types, asCopy: true)
         controller.delegate = context.coordinator
         return controller

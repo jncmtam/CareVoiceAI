@@ -20,8 +20,20 @@ struct OCRJobResponse: Decodable {
     let updatedAt: Date?
     let rawText: String?
     let draftMedications: [OCRDraftMedication]?
+    let draftPatient: OCRPatientDraft?
     let draftFollowUp: FollowUpDraft?
+    let instructions: String?
     let warnings: [String]?
+}
+
+struct OCRPatientDraft: Codable {
+    var fullName: String?
+    var phoneNumber: String?
+    var dateOfBirth: String?
+    var diagnoses: [String]?
+    var address: String?
+    var primaryDoctorName: String?
+    var confidence: Double?
 }
 
 struct OCRDraftMedication: Codable, Identifiable {
@@ -50,6 +62,8 @@ struct OCRConfirmRequest: Encodable {
     let confirmedByUserId: String?
     let medications: [Medication]
     let followUp: FollowUpDraft?
+    let patientDraft: OCRPatientDraft?
+    let instructions: String?
     let nurseNote: String?
 }
 

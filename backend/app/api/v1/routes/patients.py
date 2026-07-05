@@ -3,11 +3,11 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, File, Form, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_principal
+from app.api.deps import get_current_principal, vnpt_gateway_dep
 from app.core.config import Settings, get_settings
 from app.core.errors import APIError
 from app.db.session import get_db
-from app.integrations.vnpt import vnpt_gateway
+from app.integrations.vnpt import VNPTGateway
 from app.models.enums import DocumentType, OcrMode
 from app.schemas.ocr import (
     CancelJobRequest,
@@ -17,13 +17,16 @@ from app.schemas.ocr import (
     OCRConfirmResponse,
     OCRJobResponse,
 )
+from app.schemas.adherence import MedicationAdherenceRequest, MedicationAdherenceResponse
 from app.schemas.patients import (
     AppointmentListResponse,
     MedicationListResponse,
     PatientCreateRequest,
+    PatientDeleteResponse,
     PatientResponse,
     PatientUpdateRequest,
 )
+from app.services.medication_adherence import MedicationAdherenceService
 from app.services.auth import AuthService, Principal
 from app.services.documents import DocumentService
 from app.services.patients import PatientService
@@ -65,6 +68,17 @@ async def update_patient(
     return response
 
 
+@router.delete("/patients/{patient_id}", response_model=PatientDeleteResponse)
+async def delete_patient(
+    patient_id: str,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    principal: Annotated[Principal, Depends(get_current_principal)],
+) -> PatientDeleteResponse:
+    response = await PatientService(db).deactivate_patient(patient_id, principal)
+    await db.commit()
+    return response
+
+
 @router.get("/me/patient", response_model=PatientResponse)
 async def my_patient(
     db: Annotated[AsyncSession, Depends(get_db)],
@@ -100,6 +114,17 @@ async def my_medications(
     return await PatientService(db).medications(principal.patient_id)
 
 
+@router.post("/me/medications/adherence", response_model=MedicationAdherenceResponse)
+async def record_medication_adherence(
+    request: MedicationAdherenceRequest,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    principal: Annotated[Principal, Depends(get_current_principal)],
+) -> MedicationAdherenceResponse:
+    response = await MedicationAdherenceService(db).record(request, principal)
+    await db.commit()
+    return response
+
+
 @router.get("/patients/{patient_id}/appointments", response_model=AppointmentListResponse)
 async def patient_appointments(
     patient_id: str,
@@ -132,6 +157,7 @@ async def upload_document(
     patient_id: str,
     db: Annotated[AsyncSession, Depends(get_db)],
     settings: Annotated[Settings, Depends(get_settings)],
+    gateway: Annotated[VNPTGateway, Depends(vnpt_gateway_dep)],
     principal: Annotated[Principal, Depends(get_current_principal)],
     document_type: Annotated[DocumentType, Form()],
     ocr_mode: Annotated[OcrMode, Form()],
@@ -140,7 +166,7 @@ async def upload_document(
 ) -> DocumentUploadResponse:
     if not principal.is_staff:
         raise APIError("forbidden", "Chỉ nhân viên y tế được upload tài liệu y tế.", 403)
-    response = await DocumentService(db, settings, vnpt_gateway).upload_document(
+    response = await DocumentService(db, settings, gateway).upload_document(
         patient_id=patient_id,
         document_type=document_type,
         ocr_mode=ocr_mode,
@@ -157,9 +183,10 @@ async def ocr_job(
     job_id: str,
     db: Annotated[AsyncSession, Depends(get_db)],
     settings: Annotated[Settings, Depends(get_settings)],
+    gateway: Annotated[VNPTGateway, Depends(vnpt_gateway_dep)],
     principal: Annotated[Principal, Depends(get_current_principal)],
 ) -> OCRJobResponse:
-    response = await DocumentService(db, settings, vnpt_gateway).ocr_job(job_id)
+    response = await DocumentService(db, settings, gateway).ocr_job(job_id)
     if response.patient_id:
         await AuthService(db, settings).require_patient_scope(principal, response.patient_id)
     return response
@@ -171,10 +198,11 @@ async def cancel_ocr_job(
     request: CancelJobRequest,
     db: Annotated[AsyncSession, Depends(get_db)],
     settings: Annotated[Settings, Depends(get_settings)],
+    gateway: Annotated[VNPTGateway, Depends(vnpt_gateway_dep)],
     principal: Annotated[Principal, Depends(get_current_principal)],
 ) -> CancelJobResponse:
     _ = request
-    service = DocumentService(db, settings, vnpt_gateway)
+    service = DocumentService(db, settings, gateway)
     current = await service.ocr_job(job_id)
     if current.patient_id:
         await AuthService(db, settings).require_patient_scope(principal, current.patient_id)
@@ -193,11 +221,12 @@ async def confirm_ocr(
     request: OCRConfirmRequest,
     db: Annotated[AsyncSession, Depends(get_db)],
     settings: Annotated[Settings, Depends(get_settings)],
+    gateway: Annotated[VNPTGateway, Depends(vnpt_gateway_dep)],
     principal: Annotated[Principal, Depends(get_current_principal)],
 ) -> OCRConfirmResponse:
     if not principal.is_staff:
         raise APIError("forbidden", "Chỉ nhân viên y tế được xác nhận OCR.", 403)
-    response = await DocumentService(db, settings, vnpt_gateway).confirm_ocr(
+    response = await DocumentService(db, settings, gateway).confirm_ocr(
         patient_id=patient_id,
         upload_id=upload_id,
         request=request,

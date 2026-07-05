@@ -8,6 +8,22 @@ struct SettingsView: View {
     var body: some View {
         List {
             Section(header: Text(L10n.text("settings.account"))) {
+                HStack(spacing: CVSpacing.md) {
+                    CareVoiceLogo(
+                        variant: CareVoiceLogoVariant.forRole(session.currentRole),
+                        size: 48,
+                        showPulse: false
+                    )
+                    VStack(alignment: .leading, spacing: CVSpacing.xs) {
+                        Text(L10n.appName)
+                            .font(.headline)
+                        Text(L10n.text("settings.app_tagline"))
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .padding(.vertical, CVSpacing.xs)
+
                 if let user = session.currentUser {
                     Label(user.fullName, systemImage: "person.crop.circle")
                     Label(L10n.text("role.\(user.role.rawValue)"), systemImage: "person.text.rectangle")
@@ -29,7 +45,25 @@ struct SettingsView: View {
                     systemImage: "checkmark.circle.fill",
                     isLoading: viewModel.isSaving
                 ) {
-                    Task { await viewModel.savePreferences() }
+                    Task {
+                        let isStaff = session.currentRole == .nurse || session.currentRole == .doctor
+                        await viewModel.savePreferences(isStaff: isStaff)
+                    }
+                }
+                if let success = viewModel.saveSuccessMessage {
+                    HStack(spacing: CVSpacing.md) {
+                        StickerIcon(systemImage: "checkmark.seal.fill", size: 40, iconSize: 18, tint: .riskNormal)
+                        VStack(alignment: .leading, spacing: CVSpacing.xs) {
+                            Text(L10n.text("settings.notifications_saved"))
+                                .font(.subheadline.weight(.semibold))
+                            Text(success)
+                                .font(.footnote)
+                                .foregroundColor(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .padding(.vertical, CVSpacing.xs)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
 
@@ -38,6 +72,17 @@ struct SettingsView: View {
                     .onChange(of: viewModel.isDemoMode) { enabled in
                         viewModel.updateDemoMode(enabled)
                     }
+
+                if viewModel.isDemoMode {
+                    Label(L10n.text("settings.demo_mode_on_hint"), systemImage: "iphone")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else {
+                    NavigationLink(destination: BackendSetupView()) {
+                        Label(L10n.text("settings.connection"), systemImage: "network")
+                    }
+                }
             }
 
             if let error = viewModel.error {
@@ -56,6 +101,7 @@ struct SettingsView: View {
             }
         }
         .listStyle(InsetGroupedListStyle())
+        .cvDismissKeyboardOnScroll()
         .navigationTitle(L10n.settings)
         .task {
             await viewModel.loadPreferences()

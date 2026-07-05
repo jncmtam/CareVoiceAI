@@ -81,6 +81,10 @@ class Patient(Base, TimestampMixin, SoftDeleteMixin, VersionMixin):
     user_links: Mapped[list[PatientUser]] = relationship(back_populates="patient")
     medications: Mapped[list[Medication]] = relationship(back_populates="patient")
     appointments: Mapped[list[Appointment]] = relationship(back_populates="patient")
+    checkins: Mapped[list[Checkin]] = relationship(
+        back_populates="patient",
+        cascade="all, delete-orphan",
+    )
 
 
 class PatientUser(Base, TimestampMixin):
@@ -228,6 +232,7 @@ class Checkin(Base, TimestampMixin, SoftDeleteMixin, VersionMixin):
     audio_cache_key: Mapped[str | None] = mapped_column(String(255))
     tts_job_id: Mapped[str | None] = mapped_column(ForeignKey("jobs.id"))
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    patient: Mapped[Patient] = relationship(back_populates="checkins")
 
 
 class CheckinResponse(Base, TimestampMixin, SoftDeleteMixin, VersionMixin):
@@ -240,6 +245,7 @@ class CheckinResponse(Base, TimestampMixin, SoftDeleteMixin, VersionMixin):
     checkin_id: Mapped[str] = mapped_column(ForeignKey("checkins.id"), index=True)
     patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), index=True)
     quick_answer_id: Mapped[str | None] = mapped_column(String(32))
+    patient_declared_risk_level: Mapped[RiskLevel | None] = enum_column(RiskLevel, nullable=True)
     audio_url: Mapped[str | None] = mapped_column(Text)
     recorded_duration_seconds: Mapped[int | None] = mapped_column(Integer)
     client_recorded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -295,6 +301,7 @@ class HotlineQuestion(Base, TimestampMixin, SoftDeleteMixin, VersionMixin):
     source_scope: Mapped[str | None] = mapped_column(String(120))
     needs_staff_review: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     risk_level: Mapped[RiskLevel | None] = enum_column(RiskLevel, nullable=True, index=True)
+    risk_reasons: Mapped[list[str] | None] = mapped_column(JSON)
     staff_alert_id: Mapped[str | None] = mapped_column(String(40), index=True)
 
 
@@ -327,11 +334,45 @@ class FaceVerificationSession(Base, TimestampMixin, SoftDeleteMixin, VersionMixi
     purpose: Mapped[str] = mapped_column(String(80))
     status: Mapped[str] = mapped_column(String(32), default="not_started", nullable=False)
     upload_url: Mapped[str | None] = mapped_column(Text)
+    photo_url: Mapped[str | None] = mapped_column(Text)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     needs_staff_review: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
 
+class CaregiverAlertLog(Base, TimestampMixin):
+    __tablename__ = "caregiver_alert_logs"
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), index=True)
+    trigger_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    source_id: Mapped[str | None] = mapped_column(String(40), index=True)
+    caregiver_phone: Mapped[str] = mapped_column(String(32), nullable=False)
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    channel: Mapped[str] = mapped_column(String(32), default="sms_mock", nullable=False)
+    status: Mapped[str] = mapped_column(String(32), default="sent", nullable=False)
+
+
+class MedicationAdherenceLog(Base, TimestampMixin):
+    __tablename__ = "medication_adherence_logs"
+    __table_args__ = (
+        UniqueConstraint(
+            "patient_id",
+            "medication_id",
+            "scheduled_date",
+            "slot",
+            name="uq_med_adherence_daily_slot",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), index=True)
+    medication_id: Mapped[str] = mapped_column(ForeignKey("medications.id"), index=True)
+    slot: Mapped[str] = mapped_column(String(32), nullable=False)
+    scheduled_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    taken: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    recorded_via: Mapped[str] = mapped_column(String(32), default="voice", nullable=False)
+
+
 Index("ix_priority_patients", Patient.latest_risk_level, Patient.latest_checkin_at)
 Index("ix_alerts_priority", StaffAlert.handling_status, StaffAlert.risk_level, StaffAlert.created_at)
-

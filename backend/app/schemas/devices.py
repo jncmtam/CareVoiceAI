@@ -67,3 +67,11 @@ class FaceVerificationStatusResponse(APIModel):
     status: str
     verified_at: datetime | None = None
     needs_staff_review: bool
+
+
+class FaceVerificationUploadResponse(APIModel):
+    session_id: str
+    status: str
+    verified_at: datetime | None = None
+    needs_staff_review: bool
+    message: str

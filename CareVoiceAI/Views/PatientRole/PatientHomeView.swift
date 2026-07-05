@@ -2,35 +2,56 @@ import SwiftUI
 
 struct PatientHomeView: View {
     @StateObject private var viewModel = PatientHomeViewModel()
+    @ObservedObject private var morningTracker = MorningRoutineTracker.shared
+    @ObservedObject private var adherenceTracker = MedicationAdherenceTracker.shared
+    @State private var appeared = false
 
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: CVSpacing.lg) {
+                if AppConstants.isDemoMode {
+                    DemoModeBanner()
+                        .cvStaggeredAppear(index: 0, isVisible: appeared)
+                }
+
                 if let error = viewModel.error {
                     ErrorBannerView(message: error.userMessage) {
                         Task { await viewModel.load() }
                     }
+                    .cvStaggeredAppear(index: 0, isVisible: appeared)
                 }
 
+                MorningProgressCard(tracker: morningTracker)
+                    .cvStaggeredAppear(index: 1, isVisible: appeared)
                 checkinCard
+                    .cvStaggeredAppear(index: 2, isVisible: appeared)
                 medicationPreview
+                    .cvStaggeredAppear(index: 3, isVisible: appeared)
                 appointmentPreview
+                    .cvStaggeredAppear(index: 4, isVisible: appeared)
 
-                NavigationLink(destination: FaceVerificationPlaceholderView()) {
-                    Label(L10n.text("face.title"), systemImage: "faceid")
-                        .frame(maxWidth: .infinity, minHeight: 56)
-                }
-                .buttonStyle(CVButtonStyle(kind: .secondary))
             }
             .padding(CVSpacing.lg)
         }
+        .cvDismissKeyboardOnScroll()
         .background(Color.appBackground)
         .navigationTitle(L10n.patientHomeTitle)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                CareVoiceLogoBadge(variant: .patient, size: 30)
+            }
+        }
         .task {
             await viewModel.load()
         }
         .refreshable {
             await viewModel.load()
+        }
+        .onAppear {
+            appeared = true
+            if !morningTracker.checkinCompleted {
+                SpeechReminderService.shared.speakMorningWelcome()
+            }
         }
     }
 
@@ -38,9 +59,9 @@ struct PatientHomeView: View {
     private var checkinCard: some View {
         switch viewModel.checkinState {
         case .idle, .loading:
-            LoadingView(title: L10n.preparingQuestion)
+            LoadingView(title: L10n.preparingQuestion, systemImage: "heart.text.square.fill")
                 .frame(minHeight: 220)
-                .cvCard()
+                .cvGlossyCard(elevation: .hero)
         case .failed(let error):
             ErrorBannerView(message: error.userMessage) {
                 Task { await viewModel.load() }
@@ -48,72 +69,148 @@ struct PatientHomeView: View {
         case .empty(let message):
             EmptyStateView(title: message)
                 .frame(minHeight: 220)
+                .cvGlossyCard()
         case .loaded(let checkin):
-            VStack(alignment: .leading, spacing: CVSpacing.lg) {
-                HStack {
-                    Label(L10n.todayCheckin, systemImage: "heart.text.square.fill")
+            NavigationLink(destination: TodayCheckinView()) {
+                VStack(alignment: .leading, spacing: CVSpacing.lg) {
+                    HStack(alignment: .top) {
+                        CareVoiceLogo(variant: .patient, size: 52, showPulse: false)
+                        VStack(alignment: .leading, spacing: CVSpacing.xs) {
+                            Text(L10n.todayCheckin)
+                                .font(.headline)
+                            Text(L10n.text("patient.checkin.home_subtitle"))
+                                .font(.footnote)
+                                .foregroundColor(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        Spacer()
+                        StickerIcon(
+                            systemImage: morningTracker.checkinCompleted ? "checkmark.seal.fill" : "waveform.circle.fill",
+                            size: 36,
+                            iconSize: 16,
+                            tint: morningTracker.checkinCompleted ? .riskNormal : .careVoicePrimary
+                        )
+                    }
+
+                    CheckinFlowStepBar(
+                        activeStep: .listen,
+                        isListening: false,
+                        showsConfirmStep: false
+                    )
+
+                    Text(checkin.questionText)
+                        .font(CVFont.patientBody)
+                        .foregroundColor(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .lineLimit(3)
+
+                    Label(L10n.continueText, systemImage: "arrow.right.circle.fill")
                         .font(CVFont.patientAction)
                         .foregroundColor(.careVoicePrimary)
-                    Spacer()
-                    if checkin.audioStatus == .generating {
-                        RiskBadge(level: nil)
-                    }
+                        .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
                 }
-                Text(checkin.questionText)
-                    .font(CVFont.patientBody)
-                    .foregroundColor(.primary)
-                    .fixedSize(horizontal: false, vertical: true)
-                NavigationLink(destination: TodayCheckinView()) {
-                    Label(L10n.continueText, systemImage: "arrow.right.circle.fill")
-                        .frame(maxWidth: .infinity, minHeight: 56)
-                }
-                .buttonStyle(CVButtonStyle(kind: .primary))
+                .padding(CVSpacing.md)
             }
-            .cvCard()
+            .buttonStyle(PlainButtonStyle())
+            .cvGlossyCard(elevation: .hero)
         }
     }
 
     private var medicationPreview: some View {
         VStack(alignment: .leading, spacing: CVSpacing.md) {
             HStack {
-                Text(L10n.medications)
-                    .font(.headline)
+                SectionHeaderView(
+                    title: L10n.medications,
+                    systemImage: "pills.fill",
+                    tint: .riskNormal
+                )
                 Spacer()
-                NavigationLink(L10n.text("common.view_all"), destination: MedicationListView())
-                    .font(.caption.weight(.semibold))
+                NavigationLink {
+                    MedicationListView()
+                } label: {
+                    QuickActionSticker(title: L10n.text("common.view_all"), systemImage: "arrow.right", tint: .careVoicePrimary)
+                }
             }
             if viewModel.medications.isEmpty {
-                Text(L10n.text("medications.empty"))
-                    .font(.body)
-                    .foregroundColor(.secondary)
+                HStack(spacing: CVSpacing.sm) {
+                    StickerIcon(systemImage: "tray", size: 28, iconSize: 12, tint: .secondary)
+                    Text(L10n.text("medications.empty"))
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                }
             } else {
                 ForEach(viewModel.medications.prefix(2)) { medication in
-                    MedicationRow(medication: medication)
+                    if let target = pendingSlot(for: medication) {
+                        NavigationLink {
+                            MedicationAdherenceView(medication: medication, slot: target)
+                        } label: {
+                            HStack {
+                                MedicationRow(medication: medication)
+                                Spacer()
+                                Label(L10n.text("adherence.confirm_now"), systemImage: "checkmark.circle.fill")
+                                    .font(.footnote.weight(.semibold))
+                                    .foregroundColor(.careVoicePrimary)
+                            }
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    } else {
+                        MedicationRow(medication: medication)
+                    }
                 }
             }
         }
-        .cvCard()
+        .cvGlossyCard()
+    }
+
+    private func pendingSlot(for medication: Medication) -> MedicationTimeOfDay? {
+        let medicationId = medication.id ?? medication.name
+        let slots = medication.timesOfDay?.isEmpty == false ? medication.timesOfDay! : [.morning]
+        return slots.first { !adherenceTracker.isRecorded(medicationId: medicationId, slot: $0.rawValue) }
     }
 
     private var appointmentPreview: some View {
         VStack(alignment: .leading, spacing: CVSpacing.md) {
             HStack {
-                Text(L10n.appointments)
-                    .font(.headline)
+                SectionHeaderView(
+                    title: L10n.appointments,
+                    systemImage: "calendar.badge.clock",
+                    tint: .riskAttention
+                )
                 Spacer()
-                NavigationLink(L10n.text("common.view_all"), destination: AppointmentListView())
-                    .font(.caption.weight(.semibold))
+                NavigationLink {
+                    AppointmentListView()
+                } label: {
+                    QuickActionSticker(title: L10n.text("common.view_all"), systemImage: "arrow.right", tint: .careVoicePrimary)
+                }
             }
             if let appointment = viewModel.appointments.first {
-                Label(DateFormatters.shortDateTime.string(from: appointment.appointmentAt), systemImage: "calendar.badge.clock")
-                    .font(.body)
-                    .foregroundColor(.primary)
+                VStack(alignment: .leading, spacing: CVSpacing.xs) {
+                    HStack(spacing: CVSpacing.sm) {
+                        StickerIcon(systemImage: "clock.fill", size: 28, iconSize: 12, tint: .riskAttention)
+                        Text(DateFormatters.shortDateTime.string(from: appointment.appointmentAt))
+                            .font(.body)
+                            .foregroundColor(.primary)
+                    }
+                    if let department = appointment.department {
+                        Text(department)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    if let doctorName = appointment.doctorName {
+                        Text(doctorName)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                }
             } else {
-                Text(L10n.text("appointments.empty"))
-                    .font(.body)
-                    .foregroundColor(.secondary)
+                HStack(spacing: CVSpacing.sm) {
+                    StickerIcon(systemImage: "calendar.badge.exclamationmark", size: 28, iconSize: 12, tint: .secondary)
+                    Text(L10n.text("appointments.empty"))
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                }
             }
         }
-        .cvCard()
+        .cvGlossyCard()
     }
 }

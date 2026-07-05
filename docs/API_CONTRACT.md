@@ -35,6 +35,19 @@ Tài liệu này mô tả contract cho iOS app. Backend Python/FastAPI là lớp
 
 Mã lỗi dự kiến: `400 invalid_request`, `401 unauthorized`, `403 forbidden`, `404 not_found`, `409 conflict`, `413 file_too_large`, `415 unsupported_media_type`, `422 validation_error`, `429 rate_limited`, `500 internal_error`, `503 vendor_unavailable`, `504 job_timeout`.
 
+## Giới Hạn Upload Và Background Jobs
+
+Backend kiểm tra kích thước theo `Content-Type` khi stream file vào `storage/` local (hoặc object storage sau này):
+
+| Loại file | MIME gợi ý | Giới hạn mặc định | Env |
+| --- | --- | --- | --- |
+| Đơn thuốc/PDF/ảnh | `application/pdf`, `image/jpeg`, `image/png`, `image/heic` | 25 MB | `MAX_DOCUMENT_UPLOAD_BYTES` |
+| Ghi âm check-in/hotline | `audio/m4a`, `audio/mp4`, `audio/mpeg`, `audio/wav`, ... | 250 MB | `MAX_AUDIO_UPLOAD_BYTES` |
+| Media sinh ra (TTS) | backend ghi nội bộ | 50 MB | `MAX_GENERATED_MEDIA_BYTES` |
+| Fallback khác | mọi type còn lại | 10 MB | `MAX_UPLOAD_BYTES` |
+
+Khi `VENDOR_MOCK_MODE=false`, OCR/check-in/hotline voice trả `202` ngay và xử lý nền qua `job_runner` (delay ngắn sau `commit` request). App vẫn polling `GET /ocr/jobs/{job_id}`, `GET /checkin_jobs/{job_id}` hoặc `GET /hotline/questions/{question_id}` như contract cũ.
+
 ## Xác Thực
 
 ### POST `/auth/staff/login`
@@ -570,6 +583,25 @@ Phản hồi `200`:
 
 Trạng thái đặc biệt: polling nhẹ. App hiển thị ngôn ngữ đời thường: "Đang chuẩn bị câu hỏi...".
 
+### POST `/checkins/{checkin_id}/transcribe`
+
+Xem trước chữ từ ghi âm (không tạo alert). App dùng trước bước gửi chính thức.
+
+Yêu cầu `multipart/form-data`:
+
+- `audio_file`: file ghi âm
+- `recorded_duration_seconds`: optional
+
+Phản hồi `200`:
+
+```json
+{
+  "transcript": "Hôm nay tôi hơi chóng mặt sau khi uống thuốc.",
+  "suggested_risk_level": "attention",
+  "message": "Bác có thể chỉnh lại chữ trước khi gửi."
+}
+```
+
 ### POST `/checkins/{checkin_id}/responses`
 
 Gửi câu trả lời check-in. Backend tự quyết định STT sync/async theo thời lượng file, sau đó phân loại nguy cơ và tóm tắt. API trả ngay `job_id`.
@@ -578,6 +610,8 @@ Yêu cầu `multipart/form-data`:
 
 - `audio_file`: file `.m4a`/`.wav`, optional nếu chỉ gửi quick answer
 - `quick_answer_id`: `yes`, `no`, `normal`, optional
+- `confirmed_transcript`: chữ BN xác nhận, optional
+- `patient_declared_risk_level`: `normal`, `attention`, `intervention`, optional (bắt buộc nếu có `confirmed_transcript`)
 - `recorded_duration_seconds`: số giây, optional
 - `client_recorded_at`: ISO 8601
 - `client_request_id`: UUID
@@ -627,6 +661,7 @@ Phản hồi `200` khi hoàn tất:
     "level": "attention",
     "label": "Cần chú ý",
     "reasons": ["Có triệu chứng chóng mặt sau dùng thuốc"],
+    "analysis_hints": ["Nội dung: đề cập đau/nhức"],
     "needs_staff_review": true
   },
   "staff_alert_id": "alert_001",
@@ -688,6 +723,7 @@ Query:
 
 - `risk_level`: optional `normal|attention|intervention`
 - `handling_status`: optional `new|viewed|called_back|resolved`
+- `actionable_only`: optional `true` — chỉ BN có alert mở (`new`/`viewed`/`called_back`) hoặc risk ≥ attention
 - `query`: tên/SĐT/mã bệnh nhân
 - `page`: mặc định `1`
 - `per_page`: mặc định `30`, tối đa `100`
@@ -745,7 +781,12 @@ Phản hồi `200`:
       "transcript": "Hôm nay tôi hơi chóng mặt sau khi uống thuốc.",
       "risk_reasons": ["Có triệu chứng chóng mặt sau dùng thuốc"],
       "handling_status": "new",
-      "staff_alert_id": "alert_001"
+      "staff_alert_id": "alert_001",
+      "audio_url": "https://api.carevoice.local/media/pat_001/checkins/chk_001/answer.m4a",
+      "quick_answer_id": "yes",
+      "patient_declared_risk_level": "attention",
+      "recorded_duration_seconds": 12,
+      "analysis_hints": ["Nội dung: đề cập đau/nhức"]
     },
     {
       "id": "tl_002",
@@ -824,9 +865,12 @@ Phản hồi `200` nếu xử lý ngay:
 {
   "question_id": "hot_001",
   "status": "completed",
+  "transcript": "Tôi quên uống thuốc buổi sáng thì có uống bù không?",
   "answer_text": "Bác không tự ý uống bù. Bác vui lòng liên hệ điều dưỡng để được hướng dẫn theo đơn hiện tại.",
   "source_scope": "confirmed_medical_record",
   "needs_staff_review": true,
+  "risk_level": "attention",
+  "reasons": ["Câu hỏi liên quan hướng dẫn dùng thuốc cần nhân viên y tế xác nhận."],
   "staff_alert_id": "alert_002"
 }
 ```
@@ -856,6 +900,7 @@ Phản hồi `200`:
   "answer_text": "Triệu chứng này cần điều dưỡng/bác sĩ xem lại. Hệ thống đã gửi cảnh báo.",
   "needs_staff_review": true,
   "risk_level": "intervention",
+  "reasons": ["Hotline: bệnh nhân báo đau ngực"],
   "staff_alert_id": "alert_003",
   "poll_after_seconds": null
 }
@@ -875,9 +920,13 @@ Phản hồi `200`:
     {
       "question_id": "hot_001",
       "asked_at": "2026-07-01T02:50:00Z",
+      "mode": "text",
       "question_text": "Tôi quên uống thuốc buổi sáng thì có uống bù không?",
+      "transcript": "Tôi quên uống thuốc buổi sáng thì có uống bù không?",
       "answer_text": "Bác không tự ý uống bù...",
-      "needs_staff_review": true
+      "needs_staff_review": true,
+      "risk_level": "attention",
+      "reasons": ["Câu hỏi liên quan hướng dẫn dùng thuốc cần nhân viên y tế xác nhận."]
     }
   ],
   "next_cursor": null

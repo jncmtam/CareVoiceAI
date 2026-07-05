@@ -1,0 +1,47 @@
+{
+  "raw_text": "Mã hồ sơ: VC-2026-000001\nBệnh nhân: Chu Minh Tâm\nNgày sinh: 15/07/1998\nGiới tính: Nam\nSĐT: 0327628468\nĐịa chỉ: TP.HCM\nChẩn đoán: Đái tháo đường type 2, Tăng huyết áp\n\nBác sĩ: BS. Lê Minh\nKhoa: Nội tiết\nNgày kê đơn: 05/07/2026\n\nĐƠN THUỐC:\n1. Metformin 500mg — 1 viên, uống 2 lần/ngày (sáng, tối), uống sau ăn.\n2. Amlodipine 5mg — 1 viên mỗi sáng, uống vào cùng một giờ mỗi ngày.\n\nTái khám Nội tiết sau 14 ngày.\n\nDặn dò: Uống thuốc đủ liều, không tự ý ngưng thuốc. Theo dõi đường huyết buổi sáng.\nNếu chóng mặt, mệt bất thường hoặc đau ngực — gọi điều dưỡng ngay.\n\nNgười kê đơn: BS. Lê Minh",
+  "draft_patient": {
+    "full_name": "Chu Minh Tâm",
+    "phone_number": "0327628468",
+    "diagnoses": [
+      "Đái tháo đường type 2, Tăng huyết áp"
+    ],
+    "primary_doctor_name": "BS. Lê Minh",
+    "confidence": 0.72
+  },
+  "draft_medications": [
+    {
+      "name": "Metformin",
+      "strength": "500mg",
+      "dosage": "1 viên",
+      "frequency": "2 lần/ngày",
+      "times_of_day": [
+        "morning",
+        "evening"
+      ],
+      "instructions": "1. Metformin 500mg — 1 viên, uống 2 lần/ngày (sáng, tối), uống sau ăn.",
+      "confidence": 0.7
+    },
+    {
+      "name": "Amlodipine",
+      "strength": "5mg",
+      "dosage": "1 viên",
+      "frequency": "Mỗi sáng",
+      "times_of_day": [
+        "morning"
+      ],
+      "instructions": "2. Amlodipine 5mg — 1 viên mỗi sáng, uống vào cùng một giờ mỗi ngày.",
+      "confidence": 0.7
+    }
+  ],
+  "draft_follow_up": {
+    "department": "Nội tiết",
+    "doctor_name": "BS. Lê Minh",
+    "appointment_at": "2026-07-19T10:10:57.892229+00:00"
+  },
+  "instructions": "Uống thuốc đủ liều, không tự ý ngưng thuốc. Theo dõi đường huyết buổi sáng.",
+  "warnings": [
+    "Điều dưỡng kiểm tra và chỉnh sửa trước khi lưu vào hồ sơ.",
+    "Có 2 dòng thuốc độ tin cậy thấp, cần kiểm tra lại."
+  ]
+}

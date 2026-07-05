@@ -32,19 +32,21 @@ Tài liệu này map màn hình iOS với endpoint trong `API_CONTRACT.md`. App 
 
 ### Trang Chủ Bệnh Nhân
 
-- Hiển thị check-in hôm nay, thuốc gần tới giờ, lịch tái khám gần nhất.
+- Buổi sáng **3 bước**: check-in, uống thuốc, xác thực khuôn mặt (`MorningRoutineTracker`).
+- Hiển thị check-in hôm nay, thuốc gần tới giờ (deep-link từ thông báo), lịch tái khám gần nhất.
 - API: `GET /me/checkins/today`, `GET /me/medications`, `GET /me/appointments`
 - Điều hướng: Check-In, Thuốc, Tái khám, Hotline, Lịch sử.
 - Trạng thái rỗng: "Hôm nay chưa có câu hỏi mới."
 
 ### Check-In Hôm Nay
 
-- Màn hình cực đơn giản: câu hỏi to, nút nghe lại, mic lớn, lựa chọn nhanh Có/Không/Bình thường.
+- Màn hình cực đơn giản: câu hỏi to, 3 nút **Ổn / Bình thường / Có vấn đề**, mic tùy chọn, một nút gửi.
 - API:
   - `GET /me/checkins/today`
   - Nếu `audio_status = generating`: poll `GET /checkins/{checkin_id}/audio`
-  - Gửi ghi âm: `POST /checkins/{checkin_id}/responses`
-  - Poll kết quả: `GET /checkin_jobs/{job_id}`
+  - (Tùy chọn) `POST /checkins/{checkin_id}/transcribe` — xem trước chữ từ ghi âm
+  - Gửi: `POST /checkins/{checkin_id}/responses` (`quick_answer_id` + optional `audio_file` + optional `confirmed_transcript`)
+  - Poll kết quả: `GET /checkin_jobs/{job_id}` — `risk.analysis_hints` khi có transcript
 - Trạng thái:
   - loading: "Đang chuẩn bị câu hỏi..."
   - đang ghi âm: waveform/pulse, nút "Dừng"
@@ -71,7 +73,7 @@ Tài liệu này map màn hình iOS với endpoint trong `API_CONTRACT.md`. App 
 
 ### Hotline
 
-- Nút mic lớn giữa màn hình + ô nhập text đơn giản.
+- Nút mic lớn + ô nhập text. Giọng nói: ghi → dừng → **xác nhận Gửi** (không auto-send).
 - API:
   - Text: `POST /hotline/questions`
   - Giọng nói: `POST /hotline/questions` multipart
@@ -97,15 +99,15 @@ Tài liệu này map màn hình iOS với endpoint trong `API_CONTRACT.md`. App 
 ### Bảng Điều Khiển Nhân Viên
 
 - Màn đầu là danh sách cảnh báo ưu tiên, không phải danh sách alphabet.
-- Header KPI: tổng bệnh nhân, ca cần chú ý, ca cần can thiệp, tỷ lệ hoàn thành check-in.
-- API: `GET /staff/dashboard/overview`, `GET /staff/patients/priority`
+- Header KPI: tổng bệnh nhân, ca cần chú ý, ca cần can thiệp, tỷ lệ check-in, OCR chờ, phân tích chờ.
+- API: `GET /staff/dashboard/overview`, `GET /staff/patients/priority?actionable_only=true`
 - Danh sách: `List` hoặc `LazyVStack`, pull-to-refresh bằng `.refreshable`.
 - Cell: `PatientCard` + `RiskBadge` có màu, icon, text.
 
 ### Chi Tiết Bệnh Nhân
 
 - Header hồ sơ ngắn: tên, tuổi, bệnh nền, SĐT/người nhà.
-- Timeline dọc.
+- Timeline dọc: phát audio BN, transcript, gợi ý phân tích giọng, đánh dấu đã gọi lại.
 - API:
   - `GET /patients/{patient_id}`
   - `GET /staff/patients/{patient_id}/timeline`

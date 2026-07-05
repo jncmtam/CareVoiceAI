@@ -58,3 +58,11 @@ struct FaceVerificationStatusResponse: Decodable {
     let verifiedAt: Date?
     let needsStaffReview: Bool
 }
+
+struct FaceVerificationUploadResponse: Decodable {
+    let sessionId: String
+    let status: String
+    let verifiedAt: Date?
+    let needsStaffReview: Bool
+    let message: String
+}

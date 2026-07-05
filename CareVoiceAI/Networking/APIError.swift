@@ -22,8 +22,8 @@ enum APIError: Error, Identifiable, Equatable {
             return L10n.text("error.invalid_url")
         case .missingToken:
             return L10n.text("error.missing_token")
-        case .network(let message):
-            return message
+        case .network:
+            return L10n.errorDefault
         case .offline:
             return L10n.networkOffline
         case .timeout:
@@ -40,9 +40,16 @@ enum APIError: Error, Identifiable, Equatable {
             return L10n.text("error.polling_timeout")
         case .cancelled:
             return L10n.text("error.cancelled")
-        case .unknown(let message):
-            return message
+        case .unknown:
+            return L10n.errorDefault
         }
+    }
+
+    static func from(_ error: Error) -> APIError {
+        if let apiError = error as? APIError {
+            return apiError
+        }
+        return .unknown(message: L10n.errorDefault)
     }
 
     static func == (lhs: APIError, rhs: APIError) -> Bool {

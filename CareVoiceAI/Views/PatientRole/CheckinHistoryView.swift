@@ -30,10 +30,25 @@ struct CheckinHistoryView: View {
                                 .font(.body)
                                 .foregroundColor(.secondary)
                         }
+                        if let staffNote = item.staffNote, !staffNote.isEmpty {
+                            VStack(alignment: .leading, spacing: CVSpacing.xs) {
+                                Label(L10n.text("patient.history.staff_note_title"), systemImage: "heart.text.square.fill")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundColor(.careVoicePrimary)
+                                Text(staffNote)
+                                    .font(CVFont.patientBody)
+                                    .foregroundColor(.primary)
+                            }
+                            .padding(CVSpacing.md)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.careVoicePrimary.opacity(0.08))
+                            .cornerRadius(CVCornerRadius.sm)
+                        }
                     }
                     .padding(.vertical, CVSpacing.sm)
                 }
                 .listStyle(PlainListStyle())
+                .cvDismissKeyboardOnScroll()
                 .refreshable { await viewModel.load() }
             }
         }

@@ -15,7 +15,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.requests: dict[str, deque[float]] = defaultdict(deque)
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
-        if not self.settings.rate_limit_enabled or request.url.path.endswith("/health"):
+        if not self.settings.rate_limit_enabled or request.url.path in {"/healthz", "/health"} or request.url.path.endswith("/health"):
             return await call_next(request)
         key = self._key(request)
         now = monotonic()

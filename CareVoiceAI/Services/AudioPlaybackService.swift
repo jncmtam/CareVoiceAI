@@ -6,6 +6,7 @@ final class AudioPlaybackService: NSObject, ObservableObject, AVAudioPlayerDeleg
     @Published private(set) var isPlaying = false
 
     private var player: AVAudioPlayer?
+    var onFinished: (() -> Void)?
 
     func play(fileURL: URL) throws {
         stop()
@@ -33,6 +34,8 @@ final class AudioPlaybackService: NSObject, ObservableObject, AVAudioPlayerDeleg
             self.isPlaying = false
             self.player = nil
             try? AVAudioSession.sharedInstance().setActive(false)
+            self.onFinished?()
+            self.onFinished = nil
         }
     }
 }

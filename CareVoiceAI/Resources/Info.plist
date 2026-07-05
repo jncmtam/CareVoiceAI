@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CAREVOICE_API_BASE_URL</key>
+	<string>http://172.28.182.62:8000/api/v1</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>vi</string>
 	<key>CFBundleDisplayName</key>
@@ -20,12 +22,21 @@
 	<string>1.0.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
-	<key>CAREVOICE_API_BASE_URL</key>
-	<string>http://127.0.0.1:8000/api/v1</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_http._tcp</string>
+	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>CareVoice AI cần camera để điều dưỡng chụp đơn thuốc hoặc giấy xuất viện.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>CareVoice AI cần truy cập mạng cục bộ (Wi-Fi/LAN) để kết nối máy chủ backend trên máy Mac của bạn.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>CareVoice AI cần micro để ghi nhận câu trả lời bằng giọng nói của bệnh nhân.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

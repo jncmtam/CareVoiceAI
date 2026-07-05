@@ -7,11 +7,11 @@ from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.datastructures import UploadFile as StarletteUploadFile
 
-from app.api.deps import get_current_principal
+from app.api.deps import get_current_principal, vnpt_gateway_dep
 from app.core.config import Settings, get_settings
 from app.core.errors import APIError
 from app.db.session import get_db
-from app.integrations.vnpt import vnpt_gateway
+from app.integrations.vnpt import VNPTGateway
 from app.schemas.hotline import (
     HotlineHistoryResponse,
     HotlineQuestionResponse,
@@ -29,9 +29,10 @@ async def ask_hotline(
     request: Request,
     db: Annotated[AsyncSession, Depends(get_db)],
     settings: Annotated[Settings, Depends(get_settings)],
+    gateway: Annotated[VNPTGateway, Depends(vnpt_gateway_dep)],
     principal: Annotated[Principal, Depends(get_current_principal)],
 ) -> HotlineQuestionResponse | JSONResponse:
-    service = HotlineService(db, settings, vnpt_gateway)
+    service = HotlineService(db, settings, gateway)
     content_type = request.headers.get("content-type", "")
     if "multipart/form-data" in content_type:
         form = await request.form()
@@ -77,22 +78,24 @@ async def hotline_status(
     question_id: str,
     db: Annotated[AsyncSession, Depends(get_db)],
     settings: Annotated[Settings, Depends(get_settings)],
+    gateway: Annotated[VNPTGateway, Depends(vnpt_gateway_dep)],
     principal: Annotated[Principal, Depends(get_current_principal)],
 ) -> HotlineQuestionStatusResponse:
-    return await HotlineService(db, settings, vnpt_gateway).status(question_id, principal)
+    return await HotlineService(db, settings, gateway).status(question_id, principal)
 
 
 @router.get("/hotline/questions", response_model=HotlineHistoryResponse)
 async def hotline_history(
     db: Annotated[AsyncSession, Depends(get_db)],
     settings: Annotated[Settings, Depends(get_settings)],
+    gateway: Annotated[VNPTGateway, Depends(vnpt_gateway_dep)],
     principal: Annotated[Principal, Depends(get_current_principal)],
     patient_id: str | None = None,
     limit: int = 30,
     cursor: str | None = None,
 ) -> HotlineHistoryResponse:
     _ = cursor
-    return await HotlineService(db, settings, vnpt_gateway).history(
+    return await HotlineService(db, settings, gateway).history(
         patient_id=patient_id,
         principal=principal,
         limit=min(max(limit, 1), 100),

@@ -1,18 +1,43 @@
 import Foundation
 
+enum StaffOverviewFilter: Equatable {
+    case all
+    case attention
+    case intervention
+}
+
 @MainActor
 final class StaffDashboardViewModel: ObservableObject {
     @Published var overview: DashboardOverview?
     @Published var patients: [PatientSummary] = []
     @Published var selectedRiskLevel: RiskLevel?
+    @Published var selectedOverviewFilter: StaffOverviewFilter?
+    @Published var filterActionableOnly = false
+    @Published var shouldScrollToPatientList = false
     @Published var query = ""
     @Published var isLoading = false
     @Published var isLoadingMore = false
     @Published var hasNext = false
     @Published var error: APIError?
+    @Published var showCriticalBanner = false
+    @Published var didTriggerCriticalHaptic = false
+
+    var displayedPatients: [PatientSummary] {
+        Self.sortPatientsByPriority(patients)
+    }
+
+    var topCriticalPatient: PatientSummary? {
+        displayedPatients
+            .filter(Self.isActionableCritical)
+            .first
+    }
 
     private let apiClient: APIClient
     private var page = 1
+    private var lastAlertSignature: String?
+    private var didPrimeAlertBaseline = false
+    private var refreshTimer: Timer?
+    private(set) var suppressRiskPickerReload = false
 
     convenience init() {
         self.init(apiClient: .shared)
@@ -22,7 +47,25 @@ final class StaffDashboardViewModel: ObservableObject {
         self.apiClient = apiClient
     }
 
-    func load(reset: Bool = true) async {
+    deinit {
+        refreshTimer?.invalidate()
+    }
+
+    func startAutoRefresh() {
+        refreshTimer?.invalidate()
+        refreshTimer = Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                await self?.load()
+            }
+        }
+    }
+
+    func stopAutoRefresh() {
+        refreshTimer?.invalidate()
+        refreshTimer = nil
+    }
+
+    func load(reset: Bool = true, notifyOnNewAlerts: Bool = true) async {
         if reset {
             page = 1
             isLoading = true
@@ -36,14 +79,145 @@ final class StaffDashboardViewModel: ObservableObject {
         }
         do {
             async let overviewResponse: DashboardOverview = apiClient.dashboardOverview()
-            async let patientsResponse: PriorityPatientListResponse = apiClient.priorityPatients(page: page, query: query.cvNilIfEmpty, riskLevel: selectedRiskLevel)
+            async let patientsResponse: PriorityPatientListResponse = apiClient.priorityPatients(
+                page: page,
+                query: query.cvNilIfEmpty,
+                riskLevel: selectedRiskLevel,
+                actionableOnly: filterActionableOnly
+            )
             let values: (DashboardOverview, PriorityPatientListResponse) = try await (overviewResponse, patientsResponse)
             overview = values.0
-            patients = reset ? values.1.items : patients + values.1.items
+            let merged = reset ? values.1.items : patients + values.1.items
+            patients = Self.sortPatientsByPriority(merged)
             hasNext = values.1.hasNext
+            await notifyIfCriticalAlertsIncreased(notifyOnNewAlerts: notifyOnNewAlerts)
         } catch {
             self.error = error as? APIError ?? .unknown(message: error.localizedDescription)
         }
+    }
+
+    func selectOverviewFilter(_ filter: StaffOverviewFilter) async {
+        suppressRiskPickerReload = true
+        defer { suppressRiskPickerReload = false }
+
+        if selectedOverviewFilter == filter {
+            clearOverviewFilter()
+            await load(notifyOnNewAlerts: false)
+            return
+        }
+
+        selectedOverviewFilter = filter
+        switch filter {
+        case .all:
+            selectedRiskLevel = nil
+            filterActionableOnly = false
+        case .attention:
+            selectedRiskLevel = .attention
+            filterActionableOnly = true
+        case .intervention:
+            selectedRiskLevel = .intervention
+            filterActionableOnly = true
+        }
+        shouldScrollToPatientList = true
+        await load(notifyOnNewAlerts: false)
+    }
+
+    func syncOverviewFilterFromRiskPicker() {
+        switch selectedRiskLevel {
+        case .attention:
+            selectedOverviewFilter = .attention
+            filterActionableOnly = true
+        case .intervention:
+            selectedOverviewFilter = .intervention
+            filterActionableOnly = true
+        case .normal, .none:
+            selectedOverviewFilter = nil
+            filterActionableOnly = false
+        }
+    }
+
+    private func clearOverviewFilter() {
+        selectedOverviewFilter = nil
+        selectedRiskLevel = nil
+        filterActionableOnly = false
+    }
+
+    static func isActionable(_ patient: PatientSummary) -> Bool {
+        guard let status = patient.handlingStatus else { return false }
+        return status == .new || status == .viewed || status == .calledBack
+    }
+
+    private static func isActionableCritical(_ patient: PatientSummary) -> Bool {
+        guard let risk = patient.latestRiskLevel, risk == .intervention || risk == .attention else {
+            return false
+        }
+        return isActionable(patient)
+    }
+
+    static func sortPatientsByPriority(_ patients: [PatientSummary]) -> [PatientSummary] {
+        patients.sorted { lhs, rhs in
+            let lhsRisk = riskScore(lhs.latestRiskLevel)
+            let rhsRisk = riskScore(rhs.latestRiskLevel)
+            if lhsRisk != rhsRisk { return lhsRisk > rhsRisk }
+
+            let lhsHandling = handlingScore(lhs.handlingStatus)
+            let rhsHandling = handlingScore(rhs.handlingStatus)
+            if lhsHandling != rhsHandling { return lhsHandling > rhsHandling }
+
+            return (lhs.latestCheckinAt ?? .distantPast) > (rhs.latestCheckinAt ?? .distantPast)
+        }
+    }
+
+    private static func riskScore(_ level: RiskLevel?) -> Int {
+        switch level {
+        case .intervention: return 3
+        case .attention: return 2
+        case .normal, .none: return 1
+        }
+    }
+
+    private static func handlingScore(_ status: HandlingStatus?) -> Int {
+        switch status {
+        case .new: return 4
+        case .viewed: return 3
+        case .calledBack: return 2
+        case .resolved: return 1
+        case .none: return 0
+        }
+    }
+
+    private func notifyIfCriticalAlertsIncreased(notifyOnNewAlerts: Bool) async {
+        guard notifyOnNewAlerts, let critical = topCriticalPatient else { return }
+
+        let signature = alertSignature(for: critical)
+        if !didPrimeAlertBaseline {
+            didPrimeAlertBaseline = true
+            lastAlertSignature = signature
+            return
+        }
+        guard signature != lastAlertSignature else { return }
+        lastAlertSignature = signature
+
+        HapticsManager.critical()
+        HapticsManager.playStaffCriticalAlertSound()
+        didTriggerCriticalHaptic = true
+        showCriticalBanner = true
+        NotificationManager.shared.scheduleCriticalStaffAlert(
+            count: 1,
+            patientId: critical.patientId,
+            patientName: critical.fullName
+        )
+    }
+
+    private func alertSignature(for patient: PatientSummary) -> String {
+        [
+            patient.patientId,
+            patient.latestRiskLevel?.rawValue,
+            patient.handlingStatus?.rawValue,
+            patient.latestCheckinAt.map { String($0.timeIntervalSince1970) }
+        ]
+        .compactMap { $0 }
+        .joined(separator: "|")
     }
 
     func loadMoreIfNeeded(current patient: PatientSummary) async {
@@ -51,20 +225,46 @@ final class StaffDashboardViewModel: ObservableObject {
         page += 1
         await load(reset: false)
     }
+
+    func deletePatient(_ patient: PatientSummary) async -> Bool {
+        error = nil
+        do {
+            _ = try await apiClient.deletePatient(id: patient.patientId)
+            patients.removeAll { $0.patientId == patient.patientId }
+            HapticsManager.success()
+            await load()
+            return true
+        } catch {
+            self.error = error as? APIError ?? .unknown(message: error.localizedDescription)
+            return false
+        }
+    }
 }
 
 @MainActor
 final class PatientDetailViewModel: ObservableObject {
     @Published var profile: PatientProfile?
+    @Published var medications: [Medication] = []
+    @Published var appointments: [Appointment] = []
+    @Published var timelineHeader: TimelinePatientHeader?
     @Published var timeline: [TimelineEntry] = []
     @Published var isLoading = false
     @Published var error: APIError?
     @Published var noteText = ""
     @Published var editingEntry: TimelineEntry?
+    @Published var isEditingProfile = false
+    @Published var isSavingProfile = false
+    @Published var profileSavedMessage: String?
+    @Published var editFullName = ""
+    @Published var editCaregiverName = ""
+    @Published var editPhone = ""
+    @Published var editCaregiverPhone = ""
+    @Published var editNotes = ""
 
     let patientId: String
     private let apiClient: APIClient
     private var pollingTask: Task<Void, Never>?
+    private var completedJobIds: Set<String> = []
 
     convenience init(patientId: String) {
         self.init(patientId: patientId, apiClient: .shared)
@@ -85,10 +285,20 @@ final class PatientDetailViewModel: ObservableObject {
         defer { isLoading = false }
         do {
             async let patientResponse: PatientResponse = apiClient.patient(id: patientId)
+            async let medicationsResponse: MedicationListResponse = apiClient.medications(patientId: patientId)
+            async let appointmentsResponse: AppointmentListResponse = apiClient.appointments(patientId: patientId)
             async let timelineResponse: PatientTimelineResponse = apiClient.patientTimeline(patientId: patientId)
-            let values: (PatientResponse, PatientTimelineResponse) = try await (patientResponse, timelineResponse)
+            let values: (PatientResponse, MedicationListResponse, AppointmentListResponse, PatientTimelineResponse) = try await (
+                patientResponse,
+                medicationsResponse,
+                appointmentsResponse,
+                timelineResponse
+            )
             profile = values.0.patient
-            timeline = values.1.items
+            medications = values.1.medications
+            appointments = values.2.appointments
+            timelineHeader = values.3.patient
+            timeline = values.3.items
             pollPendingEntriesIfNeeded()
         } catch {
             self.error = error as? APIError ?? .unknown(message: error.localizedDescription)
@@ -99,20 +309,70 @@ final class PatientDetailViewModel: ObservableObject {
         await update(entry, status: .viewed, note: nil)
     }
 
+    func markResolved(_ entry: TimelineEntry) async {
+        await update(entry, status: .resolved, note: entry.staffNote)
+    }
+
     func markCalledBack(_ entry: TimelineEntry) async {
-        await update(entry, status: .calledBack, note: noteText.cvNilIfEmpty)
+        await update(entry, status: .calledBack, note: entry.staffNote, callbackAt: Date())
+    }
+
+    func beginNoteEditing(for entry: TimelineEntry) {
+        editingEntry = entry
+        noteText = entry.staffNote ?? ""
     }
 
     func saveNote() async {
         guard let editingEntry else { return }
-        await update(editingEntry, status: editingEntry.handlingStatus ?? .viewed, note: noteText.cvNilIfEmpty)
+        let current = editingEntry.handlingStatus ?? .new
+        let nextStatus: HandlingStatus = current == .new ? .viewed : current
+        await update(editingEntry, status: nextStatus, note: noteText.cvNilIfEmpty)
         self.editingEntry = nil
         self.noteText = ""
     }
 
-    private func update(_ entry: TimelineEntry, status: HandlingStatus, note: String?) async {
+    func beginProfileEditing() {
+        editFullName = profile?.fullName ?? ""
+        editCaregiverName = profile?.caregiverName ?? ""
+        editPhone = profile?.phoneNumber ?? ""
+        editCaregiverPhone = profile?.caregiverPhoneNumber ?? ""
+        editNotes = profile?.notes ?? ""
+        profileSavedMessage = nil
+        isEditingProfile = true
+    }
+
+    func saveProfile() async {
+        isSavingProfile = true
+        error = nil
+        profileSavedMessage = nil
+        defer { isSavingProfile = false }
         do {
-            _ = try await apiClient.updateHandling(patientId: patientId, entryId: entry.id, status: status, note: note)
+            let request = PatientUpdateRequest(
+                fullName: editFullName.cvNilIfEmpty,
+                phoneNumber: editPhone.cvNilIfEmpty,
+                caregiverName: editCaregiverName.cvNilIfEmpty,
+                caregiverPhoneNumber: editCaregiverPhone.cvNilIfEmpty,
+                notes: editNotes.cvNilIfEmpty
+            )
+            let response = try await apiClient.updatePatient(id: patientId, request: request)
+            profile = response.patient
+            profileSavedMessage = L10n.text("staff.edit_patient.saved")
+            isEditingProfile = false
+            HapticsManager.success()
+        } catch {
+            self.error = error as? APIError ?? .unknown(message: error.localizedDescription)
+        }
+    }
+
+    private func update(_ entry: TimelineEntry, status: HandlingStatus, note: String?, callbackAt: Date? = nil) async {
+        do {
+            _ = try await apiClient.updateHandling(
+                patientId: patientId,
+                entryId: entry.id,
+                status: status,
+                note: note,
+                callbackAt: callbackAt
+            )
             HapticsManager.success()
             await load()
         } catch {
@@ -125,7 +385,10 @@ final class PatientDetailViewModel: ObservableObject {
             guard entry.status == .analyzing || entry.status == .processing || entry.status == .transcribing else {
                 return nil
             }
-            return entry.jobId
+            guard let jobId = entry.jobId, !completedJobIds.contains(jobId) else {
+                return nil
+            }
+            return jobId
         }
         guard !jobIds.isEmpty else { return }
         pollingTask?.cancel()
@@ -134,7 +397,7 @@ final class PatientDetailViewModel: ObservableObject {
             guard let self else { return }
             for jobId in jobIds {
                 do {
-                    _ = try await AsyncPoller<CheckinJobResponse>(configuration: PollingConfiguration(timeout: 60)).poll {
+                    let result = try await AsyncPoller<CheckinJobResponse>(configuration: PollingConfiguration(timeout: 60)).poll {
                         try await apiClient.checkinJob(id: jobId)
                     } isComplete: { response in
                         response.status == .completed || response.status == .failed
@@ -142,6 +405,9 @@ final class PatientDetailViewModel: ObservableObject {
                         response.status == .failed
                     } serverDelay: { response in
                         response.pollAfterSeconds
+                    }
+                    if result.status == .completed || result.status == .failed {
+                        self.completedJobIds.insert(jobId)
                     }
                 } catch {
                     continue
@@ -154,7 +420,6 @@ final class PatientDetailViewModel: ObservableObject {
 
 @MainActor
 final class NewPatientViewModel: ObservableObject {
-    @Published var patientCode = ""
     @Published var fullName = ""
     @Published var phoneNumber = ""
     @Published var caregiverName = ""
@@ -162,6 +427,8 @@ final class NewPatientViewModel: ObservableObject {
     @Published var diagnosisText = ""
     @Published var notes = ""
     @Published var createdPatient: PatientProfile?
+    @Published var successMessage: String?
+    @Published var fieldErrors: [PatientInputValidator.Field: String] = [:]
     @Published var isLoading = false
     @Published var error: APIError?
 
@@ -176,33 +443,62 @@ final class NewPatientViewModel: ObservableObject {
     }
 
     var canSubmit: Bool {
-        !patientCode.cvTrimmed.isEmpty && !fullName.cvTrimmed.isEmpty && !phoneNumber.cvTrimmed.isEmpty
+        !fullName.cvTrimmed.isEmpty && !phoneNumber.cvTrimmed.isEmpty && !isLoading
+    }
+
+    func validateLocally() -> Bool {
+        let result = PatientInputValidator.validateNewPatient(
+            fullName: fullName,
+            phoneNumber: phoneNumber,
+            caregiverPhone: caregiverPhone
+        )
+        fieldErrors = result.fieldErrors
+        return result.isValid
     }
 
     func submit() async {
-        guard canSubmit else { return }
+        guard canSubmit, !isLoading else { return }
+        guard validateLocally() else { return }
+
         isLoading = true
         error = nil
+        successMessage = nil
         defer { isLoading = false }
+
         do {
             let request = PatientCreateRequest(
-                patientCode: patientCode.cvTrimmed,
                 fullName: fullName.cvTrimmed,
                 dateOfBirth: nil,
                 gender: nil,
-                phoneNumber: phoneNumber.cvTrimmed,
+                phoneNumber: PatientInputValidator.normalizePhoneNumber(phoneNumber),
                 caregiverName: caregiverName.cvNilIfEmpty,
-                caregiverPhoneNumber: caregiverPhone.cvNilIfEmpty,
+                caregiverPhoneNumber: caregiverPhone.cvTrimmed.isEmpty
+                    ? nil
+                    : PatientInputValidator.normalizePhoneNumber(caregiverPhone),
                 diagnoses: diagnosisText.split(separator: ",").map { String($0).cvTrimmed }.filter { !$0.isEmpty },
                 address: nil,
                 primaryDoctorName: nil,
                 notes: notes.cvNilIfEmpty
             )
-            createdPatient = try await apiClient.createPatient(request).patient
+            let patient = try await apiClient.createPatient(request).patient
+            createdPatient = patient
+            successMessage = String(format: L10n.text("staff.new_patient.success"), patient.fullName, patient.patientCode)
+            resetForm(keepingCreatedPatient: patient)
             HapticsManager.success()
         } catch {
             self.error = error as? APIError ?? .unknown(message: error.localizedDescription)
         }
+    }
+
+    private func resetForm(keepingCreatedPatient patient: PatientProfile) {
+        fullName = ""
+        phoneNumber = ""
+        caregiverName = ""
+        caregiverPhone = ""
+        diagnosisText = ""
+        notes = ""
+        fieldErrors = [:]
+        createdPatient = patient
     }
 }
 
@@ -293,8 +589,19 @@ final class OCRProcessingViewModel: ObservableObject {
 @MainActor
 final class OCRReviewViewModel: ObservableObject {
     @Published var medications: [OCRDraftMedication]
-    @Published var followUp: FollowUpDraft?
+    @Published var patientFullName = ""
+    @Published var patientPhone = ""
+    @Published var patientDiagnoses = ""
+    @Published var patientAddress = ""
+    @Published var examiningDoctor = ""
+    @Published var followUpDate = Date()
+    @Published var hasFollowUpDate = false
+    @Published var followUpDepartment = ""
+    @Published var followUpDoctor = ""
+    @Published var instructions = ""
     @Published var nurseNote = ""
+    @Published var rawText = ""
+    @Published var warnings: [String] = []
     @Published var isSaving = false
     @Published var error: APIError?
     @Published var didSave = false
@@ -314,7 +621,26 @@ final class OCRReviewViewModel: ObservableObject {
         self.uploadId = job.uploadId ?? ""
         self.jobId = job.jobId
         self.medications = job.draftMedications ?? []
-        self.followUp = job.draftFollowUp
+        self.rawText = job.rawText ?? ""
+        self.warnings = job.warnings ?? []
+        self.instructions = job.instructions ?? ""
+
+        let patient = job.draftPatient
+        self.patientFullName = patient?.fullName ?? ""
+        self.patientPhone = patient?.phoneNumber ?? ""
+        self.patientDiagnoses = patient?.diagnoses?.joined(separator: ", ") ?? ""
+        self.patientAddress = patient?.address ?? ""
+        self.examiningDoctor = patient?.primaryDoctorName ?? job.draftFollowUp?.doctorName ?? ""
+
+        if let followUp = job.draftFollowUp {
+            if let appointmentAt = followUp.appointmentAt {
+                followUpDate = appointmentAt
+                hasFollowUpDate = true
+            }
+            followUpDepartment = followUp.department ?? ""
+            followUpDoctor = followUp.doctorName ?? ""
+        }
+
         self.apiClient = apiClient
         self.session = session
     }
@@ -352,15 +678,39 @@ final class OCRReviewViewModel: ObservableObject {
                         isActive: true
                     )
                 }
+            let diagnoses = patientDiagnoses
+                .split(separator: ",")
+                .map { String($0).cvTrimmed }
+                .filter { !$0.isEmpty }
+            let patientDraft = OCRPatientDraft(
+                fullName: patientFullName.cvNilIfEmpty,
+                phoneNumber: patientPhone.cvNilIfEmpty,
+                dateOfBirth: nil,
+                diagnoses: diagnoses.isEmpty ? nil : diagnoses,
+                address: patientAddress.cvNilIfEmpty,
+                primaryDoctorName: examiningDoctor.cvNilIfEmpty,
+                confidence: nil
+            )
+            let followUpDoctorName = followUpDoctor.cvTrimmed.isEmpty ? examiningDoctor.cvTrimmed : followUpDoctor.cvTrimmed
+            let followUp = hasFollowUpDate
+                ? FollowUpDraft(
+                    appointmentAt: followUpDate,
+                    department: followUpDepartment.cvNilIfEmpty,
+                    doctorName: followUpDoctorName.cvNilIfEmpty
+                )
+                : nil
             let request = OCRConfirmRequest(
                 jobId: jobId,
                 confirmedByUserId: session.currentUser?.id,
                 medications: confirmed,
                 followUp: followUp,
+                patientDraft: patientDraft,
+                instructions: instructions.cvNilIfEmpty,
                 nurseNote: nurseNote.cvNilIfEmpty
             )
             _ = try await apiClient.confirmOCR(patientId: patientId, uploadId: uploadId, request: request)
             didSave = true
+            NotificationCenter.default.post(name: .patientDataUpdated, object: patientId)
             HapticsManager.success()
         } catch {
             self.error = error as? APIError ?? .unknown(message: error.localizedDescription)

@@ -17,9 +17,12 @@ class HotlineQuestionResponse(APIModel):
     question_id: str
     job_id: str | None = None
     status: JobStatus
+    transcript: str | None = None
     answer_text: str | None = None
     source_scope: str | None = None
     needs_staff_review: bool | None = None
+    risk_level: RiskLevel | None = None
+    reasons: list[str] | None = None
     staff_alert_id: str | None = None
     poll_after_seconds: float | None = None
 
@@ -31,6 +34,7 @@ class HotlineQuestionStatusResponse(APIModel):
     answer_text: str | None = None
     needs_staff_review: bool | None = None
     risk_level: RiskLevel | None = None
+    reasons: list[str] | None = None
     staff_alert_id: str | None = None
     poll_after_seconds: float | None = None
 
@@ -38,12 +42,15 @@ class HotlineQuestionStatusResponse(APIModel):
 class HotlineHistoryItem(APIModel):
     question_id: str
     asked_at: datetime
+    mode: str | None = None
     question_text: str | None = None
+    transcript: str | None = None
     answer_text: str | None = None
     needs_staff_review: bool | None = None
+    risk_level: RiskLevel | None = None
+    reasons: list[str] | None = None
 
 
 class HotlineHistoryResponse(APIModel):
     items: list[HotlineHistoryItem]
     next_cursor: str | None = None
-

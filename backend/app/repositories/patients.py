@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Patient
 from app.models.enums import RiskLevel
 from app.repositories.base import Repository
+from app.utils.patient_validation import normalize_patient_code, patient_code_lookup_candidates
 
 
 class PatientRepository(Repository[Patient]):
@@ -15,6 +16,53 @@ class PatientRepository(Repository[Patient]):
             select(Patient).where(Patient.patient_code == patient_code, Patient.deleted_at.is_(None))
         )
         return result.scalar_one_or_none()
+
+    async def by_code_lookup(self, raw_code: str) -> Patient | None:
+        codes = patient_code_lookup_candidates(raw_code)
+        if not codes:
+            return None
+        result = await self.session.execute(
+            select(Patient).where(Patient.patient_code.in_(codes), Patient.deleted_at.is_(None))
+        )
+        patients = list(result.scalars().all())
+        if not patients:
+            return None
+        preferred = normalize_patient_code(raw_code)
+        for patient in patients:
+            if patient.patient_code == preferred:
+                return patient
+        for code in codes:
+            for patient in patients:
+                if patient.patient_code == code:
+                    return patient
+        return patients[0]
+
+    async def by_phone(self, phone_number: str) -> Patient | None:
+        result = await self.session.execute(
+            select(Patient).where(
+                Patient.phone_number == phone_number,
+                Patient.deleted_at.is_(None),
+                Patient.is_active.is_(True),
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def next_patient_sequence(self, year: int) -> int:
+        prefix = f"VC-{year}-"
+        result = await self.session.execute(
+            select(func.max(Patient.patient_code)).where(Patient.patient_code.like(f"{prefix}%"))
+        )
+        max_code = result.scalar_one_or_none()
+        if not max_code:
+            return 1
+        suffix = max_code.rsplit("-", 1)[-1]
+        try:
+            return int(suffix) + 1
+        except ValueError:
+            result = await self.session.execute(
+                select(func.count(Patient.id)).where(Patient.patient_code.like(f"{prefix}%"))
+            )
+            return int(result.scalar_one()) + 1
 
     async def active_count(self) -> int:
         result = await self.session.execute(

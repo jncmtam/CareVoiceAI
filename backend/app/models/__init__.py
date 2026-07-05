@@ -1,5 +1,6 @@
 from app.models.entities import (
     Appointment,
+    CaregiverAlertLog,
     Checkin,
     CheckinResponse,
     Device,
@@ -9,6 +10,7 @@ from app.models.entities import (
     Job,
     MedicalDocument,
     Medication,
+    MedicationAdherenceLog,
     OtpSession,
     Patient,
     PatientUser,
@@ -34,6 +36,7 @@ from app.models.enums import (
 __all__ = [
     "Appointment",
     "AudioStatus",
+    "CaregiverAlertLog",
     "Checkin",
     "CheckinResponse",
     "Device",
@@ -48,6 +51,7 @@ __all__ = [
     "JobType",
     "MedicalDocument",
     "Medication",
+    "MedicationAdherenceLog",
     "MedicationTimeOfDay",
     "OcrMode",
     "OtpSession",

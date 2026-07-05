@@ -54,7 +54,6 @@ nonisolated enum L10n {
     static let processingOCR = text("staff.ocr.processing")
     static let confirmOCR = text("staff.ocr.confirm")
     static let markViewed = text("staff.timeline.mark_viewed")
-    static let callBack = text("staff.timeline.call_back")
     static let addNote = text("staff.timeline.add_note")
     static let settings = text("settings.title")
     static let notifications = text("settings.notifications")

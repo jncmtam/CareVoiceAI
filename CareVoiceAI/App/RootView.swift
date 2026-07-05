@@ -6,7 +6,7 @@ struct RootView: View {
     var body: some View {
         Group {
             if session.isRestoring {
-                LoadingView(title: L10n.loadingOpeningApp, systemImage: "heart.text.square")
+                LoadingView(title: L10n.loadingOpeningApp, logoVariant: .brand)
             } else if session.isAuthenticated {
                 switch session.currentRole {
                 case .patient, .caregiver:

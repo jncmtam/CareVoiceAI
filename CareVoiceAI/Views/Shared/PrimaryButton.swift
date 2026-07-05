@@ -18,10 +18,14 @@ struct CVButtonStyle: ButtonStyle {
             .padding(.horizontal, CVSpacing.lg)
             .foregroundColor(foreground)
             .background(background(configuration: configuration))
-            .cornerRadius(8)
-            .opacity(isEnabled ? 1 : 0.62)
-            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.98 : 1)
-            .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: configuration.isPressed)
+            .cornerRadius(CVCornerRadius.md)
+            .shadow(
+                color: shadowColor(configuration: configuration),
+                radius: configuration.isPressed ? 4 : 8,
+                x: 0,
+                y: configuration.isPressed ? 2 : 5
+            )
+            .opacity(isEnabled ? (configuration.isPressed ? 0.92 : 1) : 0.62)
             .accessibilityAddTraits(.isButton)
     }
 
@@ -34,16 +38,43 @@ struct CVButtonStyle: ButtonStyle {
         }
     }
 
+    @ViewBuilder
     private func background(configuration: Configuration) -> some View {
-        Group {
-            switch kind {
-            case .primary:
-                Color.careVoicePrimary.opacity(configuration.isPressed ? 0.82 : 1)
-            case .secondary:
+        switch kind {
+        case .primary:
+            LinearGradient(
+                colors: configuration.isPressed
+                    ? [Color.careVoicePrimaryGradientBottom, Color.careVoicePrimaryGradientTop]
+                    : [Color.careVoicePrimaryGradientTop, Color.careVoicePrimaryGradientBottom],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case .secondary:
+            ZStack {
                 Color.careVoicePrimary.opacity(configuration.isPressed ? 0.16 : 0.10)
-            case .destructive:
-                Color.riskIntervention.opacity(configuration.isPressed ? 0.82 : 1)
+                RoundedRectangle(cornerRadius: CVCornerRadius.md)
+                    .stroke(Color.careVoicePrimary.opacity(0.22), lineWidth: 1)
             }
+        case .destructive:
+            LinearGradient(
+                colors: [
+                    Color.riskIntervention.opacity(configuration.isPressed ? 0.78 : 1),
+                    Color.riskIntervention.opacity(configuration.isPressed ? 0.68 : 0.88)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+    }
+
+    private func shadowColor(configuration: Configuration) -> Color {
+        switch kind {
+        case .primary:
+            return Color.careVoicePrimary.opacity(configuration.isPressed ? 0.18 : 0.28)
+        case .secondary:
+            return .clear
+        case .destructive:
+            return Color.riskIntervention.opacity(0.24)
         }
     }
 }
@@ -67,6 +98,7 @@ struct PrimaryButton: View {
                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                 } else if let systemImage {
                     Image(systemName: systemImage)
+                        .font(.body.weight(.semibold))
                 }
                 Text(title)
                     .lineLimit(2)
@@ -93,6 +125,7 @@ struct SecondaryButton: View {
             HStack(spacing: CVSpacing.sm) {
                 if let systemImage {
                     Image(systemName: systemImage)
+                        .font(.body.weight(.semibold))
                 }
                 Text(title)
                     .lineLimit(2)

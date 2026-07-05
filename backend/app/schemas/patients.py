@@ -7,7 +7,6 @@ from app.schemas.common import APIModel
 
 
 class PatientCreateRequest(APIModel):
-    patient_code: str = Field(min_length=1, max_length=64)
     full_name: str = Field(min_length=1, max_length=255)
     date_of_birth: date | None = None
     gender: Gender | None = None
@@ -21,9 +20,16 @@ class PatientCreateRequest(APIModel):
 
 
 class PatientUpdateRequest(APIModel):
+    full_name: str | None = Field(default=None, min_length=1, max_length=255)
     phone_number: str | None = Field(default=None, min_length=8, max_length=32)
+    caregiver_name: str | None = Field(default=None, max_length=255)
     caregiver_phone_number: str | None = None
     notes: str | None = None
+
+
+class PatientDeleteResponse(APIModel):
+    patient_id: str
+    deleted: bool = True
 
 
 class PatientProfile(APIModel):
@@ -59,6 +65,11 @@ class PatientSummary(APIModel):
     latest_checkin_at: datetime | None = None
     handling_status: str | None = None
     unread_alert_count: int | None = None
+    alert_reasons: list[str] | None = None
+    caregiver_alert_sent_at: datetime | None = None
+    missed_medication_doses: int | None = None
+    patient_phone: str | None = None
+    caregiver_phone: str | None = None
 
 
 class Medication(APIModel):
@@ -76,6 +87,16 @@ class Medication(APIModel):
 
 class MedicationListResponse(APIModel):
     medications: list[Medication]
+
+
+class OCRPatientDraft(APIModel):
+    full_name: str | None = None
+    phone_number: str | None = None
+    date_of_birth: date | None = None
+    diagnoses: list[str] | None = None
+    address: str | None = None
+    primary_doctor_name: str | None = None
+    confidence: float | None = Field(default=None, ge=0, le=1)
 
 
 class FollowUpDraft(APIModel):

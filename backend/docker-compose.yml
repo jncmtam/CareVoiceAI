@@ -3,6 +3,9 @@ services:
     build: .
     ports:
       - "8000:8000"
+    env_file:
+      - path: .env
+        required: false
     environment:
       APP_ENV: local
       API_V1_PREFIX: /api/v1
@@ -10,11 +13,31 @@ services:
       AUTO_CREATE_TABLES: "true"
       SEED_DEMO_DATA: "true"
       JWT_SECRET_KEY: change-me-before-deploy
-      CORS_ORIGINS: http://127.0.0.1:8000,http://localhost:8000
+      VENDOR_MOCK_MODE: "true"
+      CORS_ORIGINS: '["http://127.0.0.1:8000","http://localhost:8000"]'
       MEDIA_BASE_URL: http://127.0.0.1:8000
       LOCAL_STORAGE_DIR: /app/storage
+      REDIS_URL: redis://redis:6379/0
     volumes:
       - carevoice_media:/app/storage
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=3)",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     depends_on:
       postgres:
         condition: service_healthy

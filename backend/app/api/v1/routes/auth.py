@@ -11,6 +11,7 @@ from app.schemas.auth import (
     CurrentUserResponse,
     LogoutRequest,
     PatientCodeLoginRequest,
+    PatientPasswordLoginRequest,
     PatientOtpRequest,
     PatientOtpResponse,
     PatientOtpVerifyRequest,
@@ -64,6 +65,19 @@ async def verify_otp(
         otp_session_id=request.otp_session_id,
         otp_code=request.otp_code,
         device_id=request.device_id,
+    )
+    await db.commit()
+    return response
+
+
+@router.post("/auth/patient/login", response_model=AuthResponse)
+async def patient_password_login(
+    request: PatientPasswordLoginRequest,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> AuthResponse:
+    response = await AuthService(db, settings).patient_password_login(
+        login=request.login, password=request.password, device_id=request.device_id
     )
     await db.commit()
     return response

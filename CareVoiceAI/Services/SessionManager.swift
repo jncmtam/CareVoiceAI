@@ -73,6 +73,11 @@ final class SessionManager: ObservableObject {
         completeLogin(response)
     }
 
+    func loginPatient(login: String, password: String) async throws {
+        let response = try await apiClient.loginPatient(login: login, password: password)
+        completeLogin(response)
+    }
+
     func loginPatientWithCode(patientCode: String, phoneLast4: String) async throws {
         let response = try await apiClient.loginPatientCode(patientCode: patientCode, phoneLast4: phoneLast4)
         completeLogin(response)

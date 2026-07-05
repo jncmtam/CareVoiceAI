@@ -1,7 +1,6 @@
 import Foundation
 
 struct PatientCreateRequest: Encodable {
-    var patientCode: String
     var fullName: String
     var dateOfBirth: String?
     var gender: Gender?
@@ -15,9 +14,16 @@ struct PatientCreateRequest: Encodable {
 }
 
 struct PatientUpdateRequest: Encodable {
+    var fullName: String?
     var phoneNumber: String?
+    var caregiverName: String?
     var caregiverPhoneNumber: String?
     var notes: String?
+}
+
+struct PatientDeleteResponse: Decodable {
+    let patientId: String
+    let deleted: Bool
 }
 
 struct PatientResponse: Decodable {
@@ -54,6 +60,11 @@ struct PatientSummary: Codable, Identifiable {
     let latestCheckinAt: Date?
     let handlingStatus: HandlingStatus?
     let unreadAlertCount: Int?
+    let alertReasons: [String]?
+    let caregiverAlertSentAt: Date?
+    let missedMedicationDoses: Int?
+    let patientPhone: String?
+    let caregiverPhone: String?
 }
 
 struct Medication: Codable, Identifiable {

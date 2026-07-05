@@ -30,6 +30,9 @@ struct TimelinePatientHeader: Codable, Identifiable {
     let fullName: String
     let age: Int?
     let latestRiskLevel: RiskLevel?
+    let alertReasons: [String]?
+    let caregiverAlertSentAt: Date?
+    let missedMedicationDoses: Int?
 }
 
 struct TimelineEntry: Codable, Identifiable {
@@ -43,8 +46,15 @@ struct TimelineEntry: Codable, Identifiable {
     let riskReasons: [String]?
     let handlingStatus: HandlingStatus?
     let staffAlertId: String?
+    let staffNote: String?
+    let handledByName: String?
     let displayMessage: String?
     let jobId: String?
+    var audioUrl: URL? = nil
+    var quickAnswerId: String? = nil
+    var patientDeclaredRiskLevel: RiskLevel? = nil
+    var recordedDurationSeconds: Int? = nil
+    var analysisHints: [String]? = nil
 }
 
 struct HandlingUpdateRequest: Encodable {

@@ -1,3 +1,4 @@
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -13,7 +14,8 @@ from app.api.v1.router import api_router
 from app.core.config import get_settings
 from app.core.errors import APIError
 from app.core.logging import configure_logging
-from app.db.init_db import create_tables, seed_demo_data
+from app.db.init_db import create_tables, migrate_legacy_patient_codes, seed_demo_data
+from app.db.production_accounts import sync_production_accounts
 from app.db.session import AsyncSessionLocal
 from app.middleware.rate_limit import RateLimitMiddleware
 from app.middleware.request_context import RequestContextMiddleware
@@ -21,17 +23,39 @@ from app.schemas.common import APIErrorBody, APIErrorEnvelope, stringify_details
 from app.utils.datetime import now_utc
 
 settings = get_settings()
+startup_logger = logging.getLogger("carevoice.startup")
+
+
+def _database_label(database_url: str) -> str:
+    if "@" in database_url:
+        return database_url.split("@", 1)[1]
+    return database_url
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     configure_logging()
+    startup_logger.info("CareVoice API booting (env=%s)", settings.app_env)
     settings.local_storage_dir.mkdir(parents=True, exist_ok=True)
     if settings.auto_create_tables:
         await create_tables()
+        startup_logger.info("Database tables ready (%s)", _database_label(settings.database_url))
     async with AsyncSessionLocal() as session:
+        migrated = await migrate_legacy_patient_codes(session)
+        if migrated:
+            startup_logger.info("Migrated %s legacy patient code(s)", migrated)
         await seed_demo_data(session, settings)
+        await sync_production_accounts(session)
+        startup_logger.info("Production accounts synced (nurse/patient, pat_001)")
+    startup_logger.info(
+        "Listening on :8000 | api=%s | docs=%s/docs | VENDOR_MOCK_MODE=%s",
+        settings.api_v1_prefix,
+        settings.api_v1_prefix,
+        settings.vendor_mock_mode,
+    )
+    startup_logger.info("Accounts: nurse/nurse, patient/patient | BN VC-2026-000001")
     yield
+    startup_logger.info("CareVoice API shutting down")
 
 
 def create_app() -> FastAPI:
@@ -66,8 +90,8 @@ def create_app() -> FastAPI:
     app.include_router(api_router, prefix=settings.api_v1_prefix)
 
     @app.get("/healthz")
-    async def healthz() -> dict:
-        return {"status": "ok", "checked_at": now_utc().isoformat()}
+    async def healthz() -> dict[str, str]:
+        return {"status": "ok"}
 
     app.mount("/media", StaticFiles(directory=settings.local_storage_dir), name="media")
 

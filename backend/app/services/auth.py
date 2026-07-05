@@ -11,10 +11,10 @@ from app.core.security import (
     decode_jwt,
     hash_password,
     hash_token,
-    now_utc,
     random_token_urlsafe,
     verify_password,
 )
+from app.utils.datetime import ensure_utc, now_utc
 from app.models import OtpSession, Patient, PatientUser, RefreshToken, User
 from app.models.enums import UserRole
 from app.repositories.patients import PatientRepository
@@ -27,6 +27,7 @@ from app.schemas.auth import (
     RefreshTokenResponse,
 )
 from app.utils.ids import new_id
+from app.utils.patient_validation import patient_code_lookup_candidates
 
 
 @dataclass(frozen=True)
@@ -79,7 +80,7 @@ class AuthService:
         otp = await self.session.get(OtpSession, otp_session_id)
         if not otp or otp.consumed_at:
             raise UnauthorizedError("OTP không hợp lệ.")
-        if otp.expires_at < now_utc():
+        if ensure_utc(otp.expires_at) < now_utc():
             raise APIError("otp_expired", "OTP đã hết hạn.", 410)
         otp.attempt_count += 1
         if not verify_password(otp_code, otp.code_hash):
@@ -91,10 +92,24 @@ class AuthService:
         otp.consumed_at = now_utc()
         return await self._issue_auth_response(user=user, patient=patient, device_id=device_id)
 
+    async def patient_password_login(self, *, login: str, password: str, device_id: str) -> AuthResponse:
+        user = await self.users.by_login(login)
+        if not user or user.role != UserRole.patient:
+            raise UnauthorizedError("Thông tin đăng nhập không đúng.")
+        if not user.hashed_password or not verify_password(password, user.hashed_password):
+            raise UnauthorizedError("Thông tin đăng nhập không đúng.")
+        patient_id = await self.users.patient_id_for_user(user.id)
+        if not patient_id:
+            raise APIError("not_found", "Không tìm thấy hồ sơ bệnh nhân.", 404)
+        patient = await self.session.get(Patient, patient_id)
+        if not patient or not patient.is_active:
+            raise APIError("not_found", "Không tìm thấy hồ sơ bệnh nhân.", 404)
+        return await self._issue_auth_response(user=user, patient=patient, device_id=device_id)
+
     async def patient_code_login(
         self, *, patient_code: str, phone_last4: str, device_id: str
     ) -> AuthResponse:
-        patient = await self.patients.by_code(patient_code)
+        patient = await self.patients.by_code_lookup(patient_code)
         if not patient:
             raise APIError("not_found", "Không tìm thấy bệnh nhân.", 404)
         phones = [patient.phone_number or "", patient.caregiver_phone_number or ""]
@@ -112,7 +127,7 @@ class AuthService:
             select(RefreshToken).where(RefreshToken.token_hash == token_hash)
         )
         stored = result.scalar_one_or_none()
-        if not stored or stored.revoked_at or stored.expires_at < now_utc():
+        if not stored or stored.revoked_at or ensure_utc(stored.expires_at) < now_utc():
             raise UnauthorizedError()
         user = await self.session.get(User, stored.user_id)
         if not user or not user.is_active:
@@ -229,7 +244,9 @@ class AuthService:
             (Patient.phone_number == phone_number) | (Patient.caregiver_phone_number == phone_number),
         )
         if patient_code:
-            stmt = stmt.where(Patient.patient_code == patient_code)
+            codes = patient_code_lookup_candidates(patient_code)
+            if codes:
+                stmt = stmt.where(Patient.patient_code.in_(codes))
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 

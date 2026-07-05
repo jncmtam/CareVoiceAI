@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import Settings, get_settings
 from app.core.errors import UnauthorizedError
 from app.db.session import get_db
+from app.integrations.vnpt import VNPTGateway, get_vnpt_gateway
 from app.models.enums import UserRole
 from app.services.auth import AuthService, Principal
 
@@ -35,3 +36,8 @@ def require_roles(*roles: UserRole):
 
     return checker
 
+
+def vnpt_gateway_dep(
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> VNPTGateway:
+    return get_vnpt_gateway(settings)

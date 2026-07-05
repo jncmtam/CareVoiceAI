@@ -30,6 +30,12 @@ struct PatientCodeLoginRequest: Encodable {
     let deviceId: String
 }
 
+struct PatientPasswordLoginRequest: Encodable {
+    let login: String
+    let password: String
+    let deviceId: String
+}
+
 struct AuthResponse: Decodable {
     let accessToken: String
     let refreshToken: String

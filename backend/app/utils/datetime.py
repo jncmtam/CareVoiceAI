@@ -5,6 +5,12 @@ def now_utc() -> datetime:
     return datetime.now(UTC)
 
 
+def ensure_utc(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+    return value.astimezone(UTC)
+
+
 def age_from_birth_date(value: date | None) -> int | None:
     if value is None:
         return None

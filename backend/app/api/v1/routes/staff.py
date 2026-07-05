@@ -33,6 +33,7 @@ async def priority_patients(
     principal: Annotated[Principal, Depends(get_current_principal)],
     risk_level: RiskLevel | None = None,
     handling_status: HandlingStatus | None = None,
+    actionable_only: bool = False,
     query: str | None = None,
     page: int = 1,
     per_page: int = 30,
@@ -44,6 +45,7 @@ async def priority_patients(
         query=query,
         risk_level=risk_level,
         handling_status=handling_status,
+        actionable_only=actionable_only,
     )
 
 

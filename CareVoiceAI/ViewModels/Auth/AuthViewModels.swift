@@ -30,13 +30,13 @@ final class StaffLoginViewModel: ObservableObject {
             try await session.loginStaff(login: login.cvTrimmed, password: password)
             HapticsManager.success()
         } catch {
-            self.error = error as? APIError ?? .unknown(message: error.localizedDescription)
+            self.error = APIError.from(error)
         }
     }
 
-    func submitDemo() async {
-        login = "nurse01@hospital.vn"
-        password = "demo123"
+    func submitQuickLogin() async {
+        login = "nurse"
+        password = "nurse"
         await submit()
     }
 }
@@ -48,6 +48,8 @@ final class PatientLoginViewModel: ObservableObject {
         case enterOTP(sessionId: String, maskedPhone: String)
     }
 
+    @Published var login = ""
+    @Published var password = ""
     @Published var phoneNumber = ""
     @Published var patientCode = ""
     @Published var phoneLast4 = ""
@@ -66,6 +68,29 @@ final class PatientLoginViewModel: ObservableObject {
         self.session = session
     }
 
+    var canSubmitPasswordLogin: Bool {
+        !login.cvTrimmed.isEmpty && !password.isEmpty
+    }
+
+    func loginWithPassword() async {
+        guard canSubmitPasswordLogin else { return }
+        isLoading = true
+        error = nil
+        defer { isLoading = false }
+        do {
+            try await session.loginPatient(login: login.cvTrimmed, password: password)
+            HapticsManager.success()
+        } catch {
+            self.error = APIError.from(error)
+        }
+    }
+
+    func submitQuickLogin() async {
+        login = "patient"
+        password = "patient"
+        await loginWithPassword()
+    }
+
     func requestOTP() async {
         guard !phoneNumber.cvTrimmed.isEmpty else { return }
         isLoading = true
@@ -75,7 +100,7 @@ final class PatientLoginViewModel: ObservableObject {
             let response = try await session.requestPatientOTP(phoneNumber: phoneNumber.cvTrimmed, patientCode: patientCode.cvNilIfEmpty)
             step = .enterOTP(sessionId: response.otpSessionId, maskedPhone: response.maskedPhoneNumber)
         } catch {
-            self.error = error as? APIError ?? .unknown(message: error.localizedDescription)
+            self.error = APIError.from(error)
         }
     }
 
@@ -88,7 +113,7 @@ final class PatientLoginViewModel: ObservableObject {
             try await session.verifyPatientOTP(sessionId: sessionId, code: otpCode.cvTrimmed)
             HapticsManager.success()
         } catch {
-            self.error = error as? APIError ?? .unknown(message: error.localizedDescription)
+            self.error = APIError.from(error)
         }
     }
 
@@ -101,13 +126,7 @@ final class PatientLoginViewModel: ObservableObject {
             try await session.loginPatientWithCode(patientCode: patientCode.cvTrimmed, phoneLast4: phoneLast4.cvTrimmed)
             HapticsManager.success()
         } catch {
-            self.error = error as? APIError ?? .unknown(message: error.localizedDescription)
+            self.error = APIError.from(error)
         }
-    }
-
-    func loginDemoPatient() async {
-        patientCode = "BN-2026-0001"
-        phoneLast4 = "4567"
-        await loginWithCode()
     }
 }

@@ -59,14 +59,35 @@ final class AudioRecorderService: NSObject, ObservableObject {
         guard let recorder else { return }
         recorder.updateMeters()
         lastDuration = recorder.currentTime
-        lastRecordingURL = recorder.url
+        let url = recorder.url
         recorder.stop()
         meterTimer?.invalidate()
         meterTimer = nil
         self.recorder = nil
         isRecording = false
         level = 0
+        lastRecordingURL = url
         try? AVAudioSession.sharedInstance().setActive(false)
+    }
+
+    func waitUntilRecordingFileIsReady(at url: URL, timeout: TimeInterval = 1.5) async -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        var previousSize: UInt64?
+        while Date() < deadline {
+            guard let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
+                  let size = attributes[.size] as? UInt64,
+                  size > 1024
+            else {
+                try? await Task.sleep(nanoseconds: 80_000_000)
+                continue
+            }
+            if let previousSize, previousSize == size {
+                return true
+            }
+            previousSize = size
+            try? await Task.sleep(nanoseconds: 80_000_000)
+        }
+        return (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? UInt64).map { $0 > 0 } ?? false
     }
 
     func cancelRecording() {
@@ -80,6 +101,11 @@ final class AudioRecorderService: NSObject, ObservableObject {
         lastDuration = 0
         level = 0
         try? AVAudioSession.sharedInstance().setActive(false)
+    }
+
+    func clearRecording() {
+        lastRecordingURL = nil
+        lastDuration = 0
     }
 
     private func updateMeter() {

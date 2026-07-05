@@ -4,7 +4,7 @@ from pydantic import Field
 
 from app.models.enums import JobStatus, MedicationTimeOfDay
 from app.schemas.common import APIModel
-from app.schemas.patients import FollowUpDraft, MedicalDocument, Medication
+from app.schemas.patients import FollowUpDraft, MedicalDocument, Medication, OCRPatientDraft
 
 
 class DocumentUploadResponse(APIModel):
@@ -37,7 +37,9 @@ class OCRJobResponse(APIModel):
     updated_at: datetime | None = None
     raw_text: str | None = None
     draft_medications: list[OCRDraftMedication] | None = None
+    draft_patient: OCRPatientDraft | None = None
     draft_follow_up: FollowUpDraft | None = None
+    instructions: str | None = None
     warnings: list[str] | None = None
 
 
@@ -55,6 +57,8 @@ class OCRConfirmRequest(APIModel):
     confirmed_by_user_id: str | None = None
     medications: list[Medication]
     follow_up: FollowUpDraft | None = None
+    patient_draft: OCRPatientDraft | None = None
+    instructions: str | None = None
     nurse_note: str | None = None
 
 

@@ -1,6 +1,6 @@
 # Backend CareVoice AI
 
-Backend REST API cho iOS app CareVoice AI. API bám `API_CONTRACT.md` và Swift Codable model: JSON `snake_case`, datetime ISO 8601 UTC có hậu tố `Z`, lỗi theo envelope `{ "error": ... }`, job polling cho OCR/check-in/hotline.
+Backend REST API cho iOS app CareVoice AI. API bám `docs/API_CONTRACT.md` và Swift Codable model: JSON `snake_case`, datetime ISO 8601 UTC có hậu tố `Z`, lỗi theo envelope `{ "error": ... }`, job polling cho OCR/check-in/hotline.
 
 ## Kiến trúc
 
@@ -10,7 +10,9 @@ Backend REST API cho iOS app CareVoice AI. API bám `API_CONTRACT.md` và Swift 
 - **JWT + refresh token rotation**: refresh token lưu dạng hash, revoke khi logout/rotate.
 - **RBAC**: `patient/caregiver` chỉ xem hồ sơ của mình; `nurse/doctor/admin` xem dashboard, OCR và xử lý timeline.
 - **Job model**: OCR, TTS, phân tích check-in, hotline voice dùng status chung `queued|processing|needs_review|completed|failed|...`.
-- **Cổng VNPT**: `app/integrations/vnpt.py` hiện là mock adapter; production thay bằng HTTP client gọi SmartReader, SmartVoice, STT/SmartBot.
+- **Background jobs**: `app/services/job_runner.py` chạy OCR/check-in/hotline async khi `VENDOR_MOCK_MODE=false`, delay ngắn sau `commit` để tránh race với request.
+- **Storage limits**: upload theo loại file — document/PDF/ảnh tối đa 25MB, audio tối đa 250MB, media sinh ra từ TTS tối đa 50MB; vượt giới hạn trả `413 file_too_large`.
+- **Cổng VNPT**: `app/integrations/vnpt/` gồm mock adapter và live gateway; production dùng SmartReader, SmartVoice, STT/SmartBot.
 - **Offline sync/idempotency**: endpoint có retry dùng `client_request_id` và bảng `idempotency_keys`.
 - **Middleware production**: trace id, lỗi có cấu trúc, CORS, GZip, security headers, rate limiting, health check.
 
@@ -30,7 +32,8 @@ backend/
     services/         # workflow nghiệp vụ
     utils/            # ids, datetime
   migrations/         # Alembic scaffold
-  tests/              # API contract tests
+  test/               # File mẫu: stt/, ocr/, tts/
+  tests/              # Pytest
 ```
 
 ## Thiết Kế Database
@@ -76,11 +79,14 @@ python3.12 -m venv .venv
 
 OpenAPI: `http://127.0.0.1:8000/api/v1/docs`
 
-Tài khoản demo:
+Tài khoản demo (đồng bộ mỗi startup — xem `app/db/production_accounts.py`):
 
-- Nhân viên: `nurse01@hospital.vn` / `secret`
-- Bệnh nhân: `BN-2026-0001` + 4 số cuối điện thoại `4567`
+- Nhân viên: `nurse` / `nurse` (Ngô Ngọc Triệu Mẫn)
+- Bệnh nhân: `patient` / `patient` hoặc `VC-2026-000001` + 4 số cuối SĐT `8468` (Chu Minh Tâm)
+- Người nhà: Trần Minh Anh — `+84987654321` (SMS mock khi cảnh báo)
 - OTP demo: `123456`
+
+Chi tiết: [docs/SETUP_AND_ACCOUNTS.md](../docs/SETUP_AND_ACCOUNTS.md)
 
 Base URL mặc định của iOS app là `http://127.0.0.1:8000/api/v1`; tắt demo mode trong Cài đặt để gọi backend này.
 
@@ -119,4 +125,6 @@ cd backend
 .venv/bin/python -m pytest -q
 ```
 
-Test hiện kiểm tra auth/dashboard, check-in submit/poll, OCR upload/poll/confirm, đăng ký local notification và envelope lỗi.
+Test hiện kiểm tra auth/dashboard, check-in submit/poll (+ SMS người nhà), OCR upload/poll/confirm (kể cả docx), hotline STT/SmartBot, đăng ký local notification, envelope lỗi, storage limits (`413`/`415`), background jobs và STT parser VNPT.
+
+File mẫu: `test/stt/STT.sample.wav`, `test/ocr/don_thuoc_chu_minh_tam.docx`. Demo VNPT: `python scripts/vnpt_sample_wav_demo.py`.

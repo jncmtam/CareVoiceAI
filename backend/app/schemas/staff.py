@@ -29,6 +29,9 @@ class TimelinePatientHeader(APIModel):
     full_name: str
     age: int | None = None
     latest_risk_level: RiskLevel | None = None
+    alert_reasons: list[str] | None = None
+    caregiver_alert_sent_at: datetime | None = None
+    missed_medication_doses: int | None = None
 
 
 class TimelineEntry(APIModel):
@@ -42,8 +45,15 @@ class TimelineEntry(APIModel):
     risk_reasons: list[str] | None = None
     handling_status: HandlingStatus | None = None
     staff_alert_id: str | None = None
+    staff_note: str | None = None
+    handled_by_name: str | None = None
     display_message: str | None = None
     job_id: str | None = None
+    audio_url: str | None = None
+    quick_answer_id: str | None = None
+    patient_declared_risk_level: RiskLevel | None = None
+    recorded_duration_seconds: int | None = None
+    analysis_hints: list[str] | None = None
 
 
 class PatientTimelineResponse(APIModel):

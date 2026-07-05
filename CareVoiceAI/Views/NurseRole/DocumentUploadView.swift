@@ -4,6 +4,7 @@ struct DocumentUploadView: View {
     let patientId: String
     @StateObject private var viewModel: DocumentUploadViewModel
     @State private var isShowingPicker = false
+    @State private var navigateToProcessing = false
 
     init(patientId: String) {
         self.patientId = patientId
@@ -17,8 +18,11 @@ struct DocumentUploadView: View {
             }
 
             VStack(alignment: .leading, spacing: CVSpacing.md) {
-                Text(L10n.uploadDocument)
-                    .font(CVFont.staffTitle)
+                SectionHeaderView(
+                    title: L10n.uploadDocument,
+                    systemImage: "doc.text.viewfinder",
+                    subtitle: L10n.text("document.upload_hint")
+                )
                 Picker(L10n.text("document.type"), selection: $viewModel.documentType) {
                     Text(L10n.text("document.prescription")).tag(DocumentType.prescription)
                     Text(L10n.text("document.discharge_note")).tag(DocumentType.dischargeNote)
@@ -48,10 +52,23 @@ struct DocumentUploadView: View {
                 isLoading: viewModel.isUploading,
                 isDisabled: viewModel.selectedFileURL == nil
             ) {
-                Task { await viewModel.upload() }
+                Task {
+                    await viewModel.upload()
+                    if viewModel.uploadResponse != nil {
+                        navigateToProcessing = true
+                    }
+                }
             }
 
             if let response = viewModel.uploadResponse {
+                NavigationLink(
+                    destination: OCRProcessingView(patientId: patientId, jobId: response.jobId),
+                    isActive: $navigateToProcessing
+                ) {
+                    EmptyView()
+                }
+                .hidden()
+
                 NavigationLink(destination: OCRProcessingView(patientId: patientId, jobId: response.jobId)) {
                     Label(L10n.processingOCR, systemImage: "clock.arrow.circlepath")
                         .frame(maxWidth: .infinity, minHeight: 56)

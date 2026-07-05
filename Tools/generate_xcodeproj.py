@@ -235,6 +235,7 @@ def config_block(config_id: str, name: str, target: bool) -> list[str]:
     }
     if target:
         settings.update({
+            "ASSETCATALOG_COMPILER_APPICON_NAME": "AppIcon",
             "ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME": "CareVoicePrimary",
             "CODE_SIGN_ENTITLEMENTS": "CareVoiceAI/CareVoiceAI.entitlements",
             "CODE_SIGN_STYLE": "Automatic",

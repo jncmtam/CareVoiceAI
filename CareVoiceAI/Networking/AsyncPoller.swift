@@ -18,7 +18,8 @@ struct AsyncPoller<Response> {
         operation: @escaping () async throws -> Response,
         isComplete: @escaping (Response) -> Bool,
         isFailure: @escaping (Response) -> Bool,
-        serverDelay: @escaping (Response) -> TimeInterval?
+        serverDelay: @escaping (Response) -> TimeInterval?,
+        onUpdate: ((Response) -> Void)? = nil
     ) async throws -> Response {
         let startedAt = Date()
         var delay = configuration.initialDelay
@@ -26,6 +27,7 @@ struct AsyncPoller<Response> {
         while true {
             try Task.checkCancellation()
             let response = try await operation()
+            onUpdate?(response)
 
             if isComplete(response) {
                 return response

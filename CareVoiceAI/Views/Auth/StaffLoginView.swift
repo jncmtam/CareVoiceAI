@@ -2,41 +2,59 @@ import SwiftUI
 
 struct StaffLoginView: View {
     @StateObject private var viewModel = StaffLoginViewModel()
+    @State private var appeared = false
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: CVSpacing.lg) {
-                Text(L10n.staffLoginTitle)
-                    .font(.largeTitle.weight(.bold))
-                    .foregroundColor(.primary)
-                    .padding(.top, CVSpacing.lg)
+        ZStack {
+            AuthDecorBackground()
 
-                if let error = viewModel.error {
-                    ErrorBannerView(message: error.userMessage)
-                }
+            ScrollView {
+                VStack(alignment: .leading, spacing: CVSpacing.lg) {
+                    AuthLoginHeader(title: L10n.staffLoginTitle, logoVariant: .staff)
 
-                FormField(title: L10n.emailOrStaffCode, text: $viewModel.login)
-                FormField(title: L10n.password, text: $viewModel.password, isSecure: true)
-
-                PrimaryButton(
-                    title: L10n.login,
-                    systemImage: "arrow.right.circle.fill",
-                    isLoading: viewModel.isLoading,
-                    isDisabled: !viewModel.canSubmit
-                ) {
-                    Task { await viewModel.submit() }
-                }
-
-                if AppConstants.isDemoMode {
-                    SecondaryButton(title: L10n.text("auth.demo_staff"), systemImage: "play.circle.fill") {
-                        Task { await viewModel.submitDemo() }
+                    if let error = viewModel.error {
+                        ErrorBannerView(message: error.userMessage)
+                            .cvStaggeredAppear(index: 1, isVisible: appeared)
                     }
+
+                    VStack(spacing: CVSpacing.md) {
+                        FormField(
+                            title: L10n.emailOrStaffCode,
+                            text: $viewModel.login,
+                            systemImage: "person.badge.key.fill"
+                        )
+                        FormField(
+                            title: L10n.password,
+                            text: $viewModel.password,
+                            systemImage: "lock.fill",
+                            isSecure: true
+                        )
+                    }
+                    .cvGlossyCard(elevation: .raised)
+                    .cvStaggeredAppear(index: 3, isVisible: appeared)
+
+                    PrimaryButton(
+                        title: L10n.login,
+                        systemImage: "arrow.right.circle.fill",
+                        isLoading: viewModel.isLoading,
+                        isDisabled: !viewModel.canSubmit
+                    ) {
+                        Task { await viewModel.submit() }
+                    }
+                    .cvStaggeredAppear(index: 4, isVisible: appeared)
+
+                    SecondaryButton(title: L10n.text("auth.demo_login"), systemImage: "play.circle.fill") {
+                        Task { await viewModel.submitQuickLogin() }
+                    }
+                    .cvStaggeredAppear(index: 5, isVisible: appeared)
                 }
+                .padding(CVSpacing.lg)
             }
-            .padding(CVSpacing.lg)
+            .cvDismissKeyboardOnScroll()
         }
-        .background(Color.appBackground)
         .navigationTitle(L10n.roleStaff)
         .navigationBarTitleDisplayMode(.inline)
+        .cvKeyboardDoneToolbar()
+        .onAppear { appeared = true }
     }
 }

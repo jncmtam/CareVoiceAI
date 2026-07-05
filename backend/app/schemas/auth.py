@@ -34,6 +34,12 @@ class PatientCodeLoginRequest(APIModel):
     device_id: str = Field(min_length=1, max_length=255)
 
 
+class PatientPasswordLoginRequest(APIModel):
+    login: str = Field(min_length=1, max_length=255)
+    password: str = Field(min_length=1, max_length=255)
+    device_id: str = Field(min_length=1, max_length=255)
+
+
 class RefreshTokenRequest(APIModel):
     refresh_token: str
 

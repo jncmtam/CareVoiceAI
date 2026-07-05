@@ -24,10 +24,14 @@
 		25E29746C4EBB1E8AD2DA762 /* CareVoiceAI/Utils/ImageResize.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89932748EEC85E82CC804BE2 /* CareVoiceAI/Utils/ImageResize.swift */; };
 		286CA588A22CF5393254BD69 /* CareVoiceAI/Views/Shared/RiskBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3C951D63DEAA03A12825E2B /* CareVoiceAI/Views/Shared/RiskBadge.swift */; };
 		2893D929787877FA42EFFB77 /* CareVoiceAI/Models/HotlineModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F90D9033BEFCF0C3DE04AB44 /* CareVoiceAI/Models/HotlineModels.swift */; };
+		2945406D2E2ED7A02833C0F2 /* CareVoiceAI/Utils/PatientInputValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87EB1C0658B4BCC004EFDB41 /* CareVoiceAI/Utils/PatientInputValidator.swift */; };
+		2D9F6BCD994BAFE72DD41CE8 /* CareVoiceAI/Networking/TokenRefreshCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0A425CEB2ECB74E6EF163B5 /* CareVoiceAI/Networking/TokenRefreshCoordinator.swift */; };
 		2E96CCAC09E1AE423FC54821 /* CareVoiceAI/Views/PatientRole/PatientHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E0C48059B60BA28C6CA9B47 /* CareVoiceAI/Views/PatientRole/PatientHomeView.swift */; };
 		33EB705D482F73531378D9F6 /* CareVoiceAI/Views/NurseRole/NewPatientView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249F21D85665DB6E2A345295 /* CareVoiceAI/Views/NurseRole/NewPatientView.swift */; };
+		34E046C38DD3D5CDA61DF4E8 /* CareVoiceAI/Views/Shared/VisualComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AE98D102F617B2891FCE718 /* CareVoiceAI/Views/Shared/VisualComponents.swift */; };
 		37FAFE15C0FD557697A7DC02 /* CareVoiceAI/Views/Auth/PatientLoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8D95DB704044133B53EEB95 /* CareVoiceAI/Views/Auth/PatientLoginView.swift */; };
 		383780BB765626C0593CABEB /* CareVoiceAI/Views/PatientRole/TodayCheckinView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61EB5877161A7C8BA9EA6B70 /* CareVoiceAI/Views/PatientRole/TodayCheckinView.swift */; };
+		3A9EB38D390EB6BAAB595D85 /* CareVoiceAI/Services/MedicationAdherenceTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE8B744186637826F2368C95 /* CareVoiceAI/Services/MedicationAdherenceTracker.swift */; };
 		3D6A435E3D611C20AA0B33C9 /* CareVoiceAI/Views/Shared/PatientCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32DFF3F2F14A87365F8C08BD /* CareVoiceAI/Views/Shared/PatientCard.swift */; };
 		3F09676709B6F56EA9709460 /* CareVoiceAI/App/AppConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D91D6B188B1CD63652D8972 /* CareVoiceAI/App/AppConstants.swift */; };
 		43D5FBD609757BB86E935EF7 /* CareVoiceAI/Services/AudioPlaybackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F7412BFD2FD846680FA40A6 /* CareVoiceAI/Services/AudioPlaybackService.swift */; };
@@ -38,12 +42,16 @@
 		4C54F513FEEA7E765FC2A54C /* CareVoiceAI/Views/NurseRole/DocumentPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEEA5EEAB7F30AFCA26B38FC /* CareVoiceAI/Views/NurseRole/DocumentPickerView.swift */; };
 		4E92F847B3B99F8461A73A7F /* CareVoiceAI/Views/PatientRole/PatientRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCFDD455582B7AFF61ABB32C /* CareVoiceAI/Views/PatientRole/PatientRootView.swift */; };
 		4F0B080B632DD445DE13F212 /* CareVoiceAI/Views/Shared/LoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2BF6A31BB9B76288E59C46A /* CareVoiceAI/Views/Shared/LoadingView.swift */; };
+		4F364BB60B48572A9A4C4F4B /* CareVoiceAI/Utils/KeyboardDismissal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C241E63212F61031C6327C5 /* CareVoiceAI/Utils/KeyboardDismissal.swift */; };
 		5126359B1376719CBF776773 /* CareVoiceAI/CareVoiceAIApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BB686FA81587D36E345D6F5 /* CareVoiceAI/CareVoiceAIApp.swift */; };
+		5B6895CFEBF44AABF5FCE55A /* CareVoiceAI/Utils/PhoneDialer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 130B2152DCBC3DE2ED017702 /* CareVoiceAI/Utils/PhoneDialer.swift */; };
 		61CE10E434383AAEDCA0FCFA /* CareVoiceAI/Utils/DateFormatters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42464B861A4D2B8697BA0CCD /* CareVoiceAI/Utils/DateFormatters.swift */; };
+		6422EBD95A1BFC21F5C75863 /* CareVoiceAI/Views/Settings/BackendSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7E50EFD3ED2FD8626A01302 /* CareVoiceAI/Views/Settings/BackendSetupView.swift */; };
 		64C35860F7ACEB5B15183B02 /* CareVoiceAI/ViewModels/Settings/SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6154C5D2B4A407EBEEA7DD33 /* CareVoiceAI/ViewModels/Settings/SettingsViewModel.swift */; };
 		6792EF76A5E71C164E310EC2 /* CareVoiceAI/Views/Shared/EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8B5ECB927231DF7E5ABD9AB /* CareVoiceAI/Views/Shared/EmptyStateView.swift */; };
 		67C3F55B2A95622FCE1DB55B /* CareVoiceAI/Models/PatientModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD3E216E657455FA0160C977 /* CareVoiceAI/Models/PatientModels.swift */; };
 		6908A0B1936BE88188745F5C /* CareVoiceAI/Services/AudioCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D1E0948A36A9A0197FE1650 /* CareVoiceAI/Services/AudioCache.swift */; };
+		6BFDFDF1FB7BB4B145E65D01 /* CareVoiceAI/Services/SpeechReminderService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B1663873F371B0D292FEB1 /* CareVoiceAI/Services/SpeechReminderService.swift */; };
 		6CBAE023773DEFD2417132DD /* CareVoiceAI/Utils/Localized.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A180B1E96B247E37B85AE7 /* CareVoiceAI/Utils/Localized.swift */; };
 		6F3CD26375BC959D393469EA /* CareVoiceAI/Views/Shared/PollingStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AC9E73C642003AC56AAF73D /* CareVoiceAI/Views/Shared/PollingStatusView.swift */; };
 		72155D1E1B558FD68D954FA0 /* CareVoiceAI/Views/NurseRole/PatientDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8327EA430F207F4E0C26C99E /* CareVoiceAI/Views/NurseRole/PatientDetailView.swift */; };
@@ -51,13 +59,20 @@
 		77441ECDFB18F4C6C9EA5F07 /* CareVoiceAI/App/AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7112B2A9F65D600EFFA72BB /* CareVoiceAI/App/AppDelegate.swift */; };
 		7B066DE21DC67E4F0BE903A5 /* CareVoiceAI/Models/CommonModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EB1EC51F4B4B129C1C819D4 /* CareVoiceAI/Models/CommonModels.swift */; };
 		7B763E06B4170018642DF544 /* CareVoiceAI/Views/Auth/RoleSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93FE7D933D9FA7951245BF3D /* CareVoiceAI/Views/Auth/RoleSelectionView.swift */; };
+		7EAC57D308687A61C57F89B9 /* CareVoiceAI/Views/Shared/SpeakingAvatarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90764F5AD6C047C80D28C964 /* CareVoiceAI/Views/Shared/SpeakingAvatarView.swift */; };
+		86C2E572FE9AF6BB8BE9F1FE /* CareVoiceAI/Utils/NetworkDeviceHints.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDB3ABC49D8825DD7018C47 /* CareVoiceAI/Utils/NetworkDeviceHints.swift */; };
 		8A0DEEA1E73FB33D37D780B8 /* CareVoiceAI/Resources/Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8A6FD71FC33E016D0E781302 /* CareVoiceAI/Resources/Assets.xcassets */; };
 		8C19F109A4CF0C55A15BF9EA /* CareVoiceAI/Services/HapticsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D2B070B007361B2CB1121CF /* CareVoiceAI/Services/HapticsManager.swift */; };
+		8DEC522360DC1213FD31EB6F /* CareVoiceAI/Services/MorningRoutineTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 910729AF91B3F28053D6F3D9 /* CareVoiceAI/Services/MorningRoutineTracker.swift */; };
+		95559BBA66C63AD248A846D5 /* CareVoiceAI/Services/PatientNavigationCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61028298C121D8FC4314EA39 /* CareVoiceAI/Services/PatientNavigationCoordinator.swift */; };
 		9AF9B43DD9A1600F40729E63 /* CareVoiceAI/Services/ReachabilityMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08A5346422C69BF2727FC738 /* CareVoiceAI/Services/ReachabilityMonitor.swift */; };
 		9C8F0D40F410702A8316CE4F /* CareVoiceAI/Views/Shared/RecordingButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B07BCDAA789B52A750F30C5B /* CareVoiceAI/Views/Shared/RecordingButton.swift */; };
 		9E59D142849CAF0C79A43785 /* CareVoiceAI/Views/PatientRole/AppointmentListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E5A560D34A9A6570698DF17 /* CareVoiceAI/Views/PatientRole/AppointmentListView.swift */; };
+		9FF97E4327A8DBB260CE35DF /* CareVoiceAI/Views/Shared/WowExperienceComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28D934F3C543C067B9081DE8 /* CareVoiceAI/Views/Shared/WowExperienceComponents.swift */; };
+		A19C2F757A7686628C3BE905 /* CareVoiceAI/Utils/UploadLimits.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81AC60EF954673401693C8B2 /* CareVoiceAI/Utils/UploadLimits.swift */; };
 		A634B5BC194FB437DD304458 /* CareVoiceAI/Networking/APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D4F0C76506ADCCB84631B19 /* CareVoiceAI/Networking/APIClient.swift */; };
 		A67D96772F54154AE494B415 /* CareVoiceAI/ViewModels/NurseRole/StaffViewModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CD9C40DDAA33CAABA07DBCD /* CareVoiceAI/ViewModels/NurseRole/StaffViewModels.swift */; };
+		A7ED5ED9C89435D0F145D5B9 /* CareVoiceAI/Views/PatientRole/MedicationAdherenceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74753C41CCC69D423DC4D8A5 /* CareVoiceAI/Views/PatientRole/MedicationAdherenceView.swift */; };
 		AA6AD1DC9B634E556CBCFD64 /* CareVoiceAI/Views/Shared/ErrorBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ADA6B902050E640688A6B58 /* CareVoiceAI/Views/Shared/ErrorBannerView.swift */; };
 		B3F70475FE4CB6EA5AAED9B2 /* CareVoiceAI/Views/Shared/TimelineEntryRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91062F035CA23A35B8B6DF0B /* CareVoiceAI/Views/Shared/TimelineEntryRow.swift */; };
 		B4E90136BD67EAED326FC149 /* CareVoiceAI/Models/OCRModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D856254D78099D4796B0637 /* CareVoiceAI/Models/OCRModels.swift */; };
@@ -65,9 +80,11 @@
 		BAEB6D559A254935F924C2E4 /* CareVoiceAI/Views/Auth/StaffLoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74BFA96807FE846D8E58C349 /* CareVoiceAI/Views/Auth/StaffLoginView.swift */; };
 		BE45F8A364578641C6558C27 /* CareVoiceAI/Models/CheckinModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0598309B81E18EF15B3AFA5 /* CareVoiceAI/Models/CheckinModels.swift */; };
 		BF843636084660433FE16AA5 /* CareVoiceAI/Utils/StringExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F65EB01A86AD52FAA5C2983 /* CareVoiceAI/Utils/StringExtensions.swift */; };
+		C03FD50E8F904B9B6FEF5D3C /* CareVoiceAI/Networking/DemoPatientSeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42562BCCDCCB140C1445C108 /* CareVoiceAI/Networking/DemoPatientSeed.swift */; };
 		C813063810F32C6401A99C07 /* CareVoiceAI/Views/PatientRole/CheckinHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DB0D8B8248CAF2BF8F122C6 /* CareVoiceAI/Views/PatientRole/CheckinHistoryView.swift */; };
 		CD4FF333BB92419C662D1D5D /* CareVoiceAI/Views/Shared/DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A3E11B26B1B52736AA002B /* CareVoiceAI/Views/Shared/DesignSystem.swift */; };
 		CF85998057404495280A5E25 /* CareVoiceAI/Models/AuthModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DB89445CD6F50E73EE3AA26 /* CareVoiceAI/Models/AuthModels.swift */; };
+		D065363C0630D4C9D20A5345 /* CareVoiceAI/Models/AdherenceModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C666EC308EC3DB001C58956A /* CareVoiceAI/Models/AdherenceModels.swift */; };
 		D3B932E5FF76075F88818581 /* CareVoiceAI/Models/NotificationModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 855EBFBC2C58C0F7DF062652 /* CareVoiceAI/Models/NotificationModels.swift */; };
 		D8ADC82CFB8FFA42DA61D87D /* CareVoiceAI/Networking/DemoAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B575BC719F15E4C8C57FFAA5 /* CareVoiceAI/Networking/DemoAPIService.swift */; };
 		D9C03D18A3F9C738ED1F7C15 /* CareVoiceAI/Views/PatientRole/HotlineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E72CA21C0213FAC477C3E51 /* CareVoiceAI/Views/PatientRole/HotlineView.swift */; };
@@ -77,13 +94,17 @@
 		F14D0C3D16975CB4BD82055F /* CareVoiceAI/Networking/APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC6992A9CB8EB9A55039AA9B /* CareVoiceAI/Networking/APIError.swift */; };
 		F18A1377B3004B5AED17D9FB /* CareVoiceAI/Utils/AccessibilityHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C7E1FFEAAFFD26B997DB590 /* CareVoiceAI/Utils/AccessibilityHelpers.swift */; };
 		F5E6A7A8AB3BBE1CD60A141D /* CareVoiceAI/Views/NurseRole/StaffRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25B08BBEE92CFFC9050E3622 /* CareVoiceAI/Views/NurseRole/StaffRootView.swift */; };
+		FC48EDFA29AB2E33391E4446 /* CareVoiceAI/Views/PatientRole/CameraCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 989A22408105FFB757D644FC /* CareVoiceAI/Views/PatientRole/CameraCaptureView.swift */; };
+		FCEC68818B8BE8C7EACC2821 /* CareVoiceAI/Views/Shared/CareVoiceLogo.swift in Sources */ = {isa = PBXBuildFile; fileRef = D319DCEF3EDD4B2BC576A44F /* CareVoiceAI/Views/Shared/CareVoiceLogo.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		08A5346422C69BF2727FC738 /* CareVoiceAI/Services/ReachabilityMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Services/ReachabilityMonitor.swift; sourceTree = SOURCE_ROOT; };
+		0AE98D102F617B2891FCE718 /* CareVoiceAI/Views/Shared/VisualComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Views/Shared/VisualComponents.swift; sourceTree = SOURCE_ROOT; };
 		0DB89445CD6F50E73EE3AA26 /* CareVoiceAI/Models/AuthModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Models/AuthModels.swift; sourceTree = SOURCE_ROOT; };
 		0FAA1C0E64F6F7C1ABE4C018 /* CareVoiceAI/App/RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/App/RootView.swift; sourceTree = SOURCE_ROOT; };
 		11F4B6EFE499C32295375F3D /* CareVoiceAI/Views/NurseRole/OCRProcessingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Views/NurseRole/OCRProcessingView.swift; sourceTree = SOURCE_ROOT; };
+		130B2152DCBC3DE2ED017702 /* CareVoiceAI/Utils/PhoneDialer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Utils/PhoneDialer.swift; sourceTree = SOURCE_ROOT; };
 		13A180B1E96B247E37B85AE7 /* CareVoiceAI/Utils/Localized.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Utils/Localized.swift; sourceTree = SOURCE_ROOT; };
 		1AC9E73C642003AC56AAF73D /* CareVoiceAI/Views/Shared/PollingStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Views/Shared/PollingStatusView.swift; sourceTree = SOURCE_ROOT; };
 		1D4F0C76506ADCCB84631B19 /* CareVoiceAI/Networking/APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Networking/APIClient.swift; sourceTree = SOURCE_ROOT; };
@@ -92,6 +113,7 @@
 		249F21D85665DB6E2A345295 /* CareVoiceAI/Views/NurseRole/NewPatientView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Views/NurseRole/NewPatientView.swift; sourceTree = SOURCE_ROOT; };
 		25652E01E5609B01220426B2 /* CareVoiceAI/Views/NurseRole/OCRReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Views/NurseRole/OCRReviewView.swift; sourceTree = SOURCE_ROOT; };
 		25B08BBEE92CFFC9050E3622 /* CareVoiceAI/Views/NurseRole/StaffRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Views/NurseRole/StaffRootView.swift; sourceTree = SOURCE_ROOT; };
+		28D934F3C543C067B9081DE8 /* CareVoiceAI/Views/Shared/WowExperienceComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Views/Shared/WowExperienceComponents.swift; sourceTree = SOURCE_ROOT; };
 		2E0C48059B60BA28C6CA9B47 /* CareVoiceAI/Views/PatientRole/PatientHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Views/PatientRole/PatientHomeView.swift; sourceTree = SOURCE_ROOT; };
 		2EB1EC51F4B4B129C1C819D4 /* CareVoiceAI/Models/CommonModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Models/CommonModels.swift; sourceTree = SOURCE_ROOT; };
 		2FF961B535D67325CB77F1B5 /* CareVoiceAI/Networking/TokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Networking/TokenStore.swift; sourceTree = SOURCE_ROOT; };
@@ -100,14 +122,17 @@
 		36C10F15442DFFE396BC2D5B /* CareVoiceAI/Services/NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Services/NotificationManager.swift; sourceTree = SOURCE_ROOT; };
 		38A007151ABE87CC01A5B6E9 /* CareVoiceAI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CareVoiceAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		42464B861A4D2B8697BA0CCD /* CareVoiceAI/Utils/DateFormatters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Utils/DateFormatters.swift; sourceTree = SOURCE_ROOT; };
+		42562BCCDCCB140C1445C108 /* CareVoiceAI/Networking/DemoPatientSeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Networking/DemoPatientSeed.swift; sourceTree = SOURCE_ROOT; };
 		4D91D6B188B1CD63652D8972 /* CareVoiceAI/App/AppConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/App/AppConstants.swift; sourceTree = SOURCE_ROOT; };
 		4F7412BFD2FD846680FA40A6 /* CareVoiceAI/Services/AudioPlaybackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Services/AudioPlaybackService.swift; sourceTree = SOURCE_ROOT; };
 		5C6AF746E6183CC5EEA77DA4 /* CareVoiceAI/Services/OfflineUploadQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Services/OfflineUploadQueue.swift; sourceTree = SOURCE_ROOT; };
 		5CEC25BCFB284480A411E64B /* CareVoiceAI/Utils/FileStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Utils/FileStorage.swift; sourceTree = SOURCE_ROOT; };
+		61028298C121D8FC4314EA39 /* CareVoiceAI/Services/PatientNavigationCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Services/PatientNavigationCoordinator.swift; sourceTree = SOURCE_ROOT; };
 		6154C5D2B4A407EBEEA7DD33 /* CareVoiceAI/ViewModels/Settings/SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/ViewModels/Settings/SettingsViewModel.swift; sourceTree = SOURCE_ROOT; };
 		61EB5877161A7C8BA9EA6B70 /* CareVoiceAI/Views/PatientRole/TodayCheckinView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Views/PatientRole/TodayCheckinView.swift; sourceTree = SOURCE_ROOT; };
 		6BB686FA81587D36E345D6F5 /* CareVoiceAI/CareVoiceAIApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/CareVoiceAIApp.swift; sourceTree = SOURCE_ROOT; };
 		6E5A560D34A9A6570698DF17 /* CareVoiceAI/Views/PatientRole/AppointmentListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Views/PatientRole/AppointmentListView.swift; sourceTree = SOURCE_ROOT; };
+		74753C41CCC69D423DC4D8A5 /* CareVoiceAI/Views/PatientRole/MedicationAdherenceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Views/PatientRole/MedicationAdherenceView.swift; sourceTree = SOURCE_ROOT; };
 		74BFA96807FE846D8E58C349 /* CareVoiceAI/Views/Auth/StaffLoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Views/Auth/StaffLoginView.swift; sourceTree = SOURCE_ROOT; };
 		7ADA6B902050E640688A6B58 /* CareVoiceAI/Views/Shared/ErrorBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Views/Shared/ErrorBannerView.swift; sourceTree = SOURCE_ROOT; };
 		7C51D34C09075BE9BF677A56 /* CareVoiceAI/Views/Shared/FormField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Views/Shared/FormField.swift; sourceTree = SOURCE_ROOT; };
@@ -115,20 +140,28 @@
 		7D2B070B007361B2CB1121CF /* CareVoiceAI/Services/HapticsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Services/HapticsManager.swift; sourceTree = SOURCE_ROOT; };
 		7D856254D78099D4796B0637 /* CareVoiceAI/Models/OCRModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Models/OCRModels.swift; sourceTree = SOURCE_ROOT; };
 		81990FF1AD7BDE57866ABFCE /* CareVoiceAI/ViewModels/PatientRole/PatientViewModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/ViewModels/PatientRole/PatientViewModels.swift; sourceTree = SOURCE_ROOT; };
+		81AC60EF954673401693C8B2 /* CareVoiceAI/Utils/UploadLimits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Utils/UploadLimits.swift; sourceTree = SOURCE_ROOT; };
 		8327EA430F207F4E0C26C99E /* CareVoiceAI/Views/NurseRole/PatientDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Views/NurseRole/PatientDetailView.swift; sourceTree = SOURCE_ROOT; };
 		855EBFBC2C58C0F7DF062652 /* CareVoiceAI/Models/NotificationModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Models/NotificationModels.swift; sourceTree = SOURCE_ROOT; };
+		87EB1C0658B4BCC004EFDB41 /* CareVoiceAI/Utils/PatientInputValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Utils/PatientInputValidator.swift; sourceTree = SOURCE_ROOT; };
 		89932748EEC85E82CC804BE2 /* CareVoiceAI/Utils/ImageResize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Utils/ImageResize.swift; sourceTree = SOURCE_ROOT; };
 		8A6FD71FC33E016D0E781302 /* CareVoiceAI/Resources/Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = CareVoiceAI/Resources/Assets.xcassets; sourceTree = SOURCE_ROOT; };
 		8D42733D4197DC99A6C32C89 /* CareVoiceAI/Resources/vi.lproj/Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; path = CareVoiceAI/Resources/vi.lproj/Localizable.strings; sourceTree = SOURCE_ROOT; };
 		8F65EB01A86AD52FAA5C2983 /* CareVoiceAI/Utils/StringExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Utils/StringExtensions.swift; sourceTree = SOURCE_ROOT; };
+		90764F5AD6C047C80D28C964 /* CareVoiceAI/Views/Shared/SpeakingAvatarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Views/Shared/SpeakingAvatarView.swift; sourceTree = SOURCE_ROOT; };
 		91062F035CA23A35B8B6DF0B /* CareVoiceAI/Views/Shared/TimelineEntryRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Views/Shared/TimelineEntryRow.swift; sourceTree = SOURCE_ROOT; };
+		910729AF91B3F28053D6F3D9 /* CareVoiceAI/Services/MorningRoutineTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Services/MorningRoutineTracker.swift; sourceTree = SOURCE_ROOT; };
 		93FE7D933D9FA7951245BF3D /* CareVoiceAI/Views/Auth/RoleSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Views/Auth/RoleSelectionView.swift; sourceTree = SOURCE_ROOT; };
+		989A22408105FFB757D644FC /* CareVoiceAI/Views/PatientRole/CameraCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Views/PatientRole/CameraCaptureView.swift; sourceTree = SOURCE_ROOT; };
+		9C241E63212F61031C6327C5 /* CareVoiceAI/Utils/KeyboardDismissal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Utils/KeyboardDismissal.swift; sourceTree = SOURCE_ROOT; };
 		9C7E1FFEAAFFD26B997DB590 /* CareVoiceAI/Utils/AccessibilityHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Utils/AccessibilityHelpers.swift; sourceTree = SOURCE_ROOT; };
 		9D1E0948A36A9A0197FE1650 /* CareVoiceAI/Services/AudioCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Services/AudioCache.swift; sourceTree = SOURCE_ROOT; };
 		9F0B9F5C9BDD9452A58A2F0B /* CareVoiceAI/Views/Shared/PrimaryButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Views/Shared/PrimaryButton.swift; sourceTree = SOURCE_ROOT; };
+		9FDB3ABC49D8825DD7018C47 /* CareVoiceAI/Utils/NetworkDeviceHints.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Utils/NetworkDeviceHints.swift; sourceTree = SOURCE_ROOT; };
 		A4B66D9652F470A4427D25A0 /* CareVoiceAI/Networking/MultipartFormDataBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Networking/MultipartFormDataBuilder.swift; sourceTree = SOURCE_ROOT; };
 		A8D95DB704044133B53EEB95 /* CareVoiceAI/Views/Auth/PatientLoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Views/Auth/PatientLoginView.swift; sourceTree = SOURCE_ROOT; };
 		B07BCDAA789B52A750F30C5B /* CareVoiceAI/Views/Shared/RecordingButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Views/Shared/RecordingButton.swift; sourceTree = SOURCE_ROOT; };
+		B0A425CEB2ECB74E6EF163B5 /* CareVoiceAI/Networking/TokenRefreshCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Networking/TokenRefreshCoordinator.swift; sourceTree = SOURCE_ROOT; };
 		B2BF6A31BB9B76288E59C46A /* CareVoiceAI/Views/Shared/LoadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Views/Shared/LoadingView.swift; sourceTree = SOURCE_ROOT; };
 		B575BC719F15E4C8C57FFAA5 /* CareVoiceAI/Networking/DemoAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Networking/DemoAPIService.swift; sourceTree = SOURCE_ROOT; };
 		BAA4DF0C01391C6C8CAADF35 /* CareVoiceAI/Services/SessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Services/SessionManager.swift; sourceTree = SOURCE_ROOT; };
@@ -137,10 +170,15 @@
 		BD3E216E657455FA0160C977 /* CareVoiceAI/Models/PatientModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Models/PatientModels.swift; sourceTree = SOURCE_ROOT; };
 		BEEA5EEAB7F30AFCA26B38FC /* CareVoiceAI/Views/NurseRole/DocumentPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Views/NurseRole/DocumentPickerView.swift; sourceTree = SOURCE_ROOT; };
 		C3C951D63DEAA03A12825E2B /* CareVoiceAI/Views/Shared/RiskBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Views/Shared/RiskBadge.swift; sourceTree = SOURCE_ROOT; };
+		C666EC308EC3DB001C58956A /* CareVoiceAI/Models/AdherenceModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Models/AdherenceModels.swift; sourceTree = SOURCE_ROOT; };
 		CCFDD455582B7AFF61ABB32C /* CareVoiceAI/Views/PatientRole/PatientRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Views/PatientRole/PatientRootView.swift; sourceTree = SOURCE_ROOT; };
 		D0598309B81E18EF15B3AFA5 /* CareVoiceAI/Models/CheckinModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Models/CheckinModels.swift; sourceTree = SOURCE_ROOT; };
+		D319DCEF3EDD4B2BC576A44F /* CareVoiceAI/Views/Shared/CareVoiceLogo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Views/Shared/CareVoiceLogo.swift; sourceTree = SOURCE_ROOT; };
 		D6E632F519D82318D5E659E9 /* CareVoiceAI/Views/PatientRole/MedicationListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Views/PatientRole/MedicationListView.swift; sourceTree = SOURCE_ROOT; };
+		D7E50EFD3ED2FD8626A01302 /* CareVoiceAI/Views/Settings/BackendSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Views/Settings/BackendSetupView.swift; sourceTree = SOURCE_ROOT; };
+		DE8B744186637826F2368C95 /* CareVoiceAI/Services/MedicationAdherenceTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Services/MedicationAdherenceTracker.swift; sourceTree = SOURCE_ROOT; };
 		DF8F78075C106C1F59B5D8F9 /* CareVoiceAI/Views/NurseRole/StaffDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Views/NurseRole/StaffDashboardView.swift; sourceTree = SOURCE_ROOT; };
+		E1B1663873F371B0D292FEB1 /* CareVoiceAI/Services/SpeechReminderService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Services/SpeechReminderService.swift; sourceTree = SOURCE_ROOT; };
 		E284B655C971A1DABF51B18E /* CareVoiceAI/Networking/AsyncPoller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Networking/AsyncPoller.swift; sourceTree = SOURCE_ROOT; };
 		E4041F54330C682F90B13234 /* CareVoiceAI/Networking/APIEndpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/Networking/APIEndpoint.swift; sourceTree = SOURCE_ROOT; };
 		E7112B2A9F65D600EFFA72BB /* CareVoiceAI/App/AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareVoiceAI/App/AppDelegate.swift; sourceTree = SOURCE_ROOT; };
@@ -179,6 +217,7 @@
 				E7112B2A9F65D600EFFA72BB /* CareVoiceAI/App/AppDelegate.swift */,
 				0FAA1C0E64F6F7C1ABE4C018 /* CareVoiceAI/App/RootView.swift */,
 				6BB686FA81587D36E345D6F5 /* CareVoiceAI/CareVoiceAIApp.swift */,
+				C666EC308EC3DB001C58956A /* CareVoiceAI/Models/AdherenceModels.swift */,
 				0DB89445CD6F50E73EE3AA26 /* CareVoiceAI/Models/AuthModels.swift */,
 				D0598309B81E18EF15B3AFA5 /* CareVoiceAI/Models/CheckinModels.swift */,
 				2EB1EC51F4B4B129C1C819D4 /* CareVoiceAI/Models/CommonModels.swift */,
@@ -192,22 +231,33 @@
 				FC6992A9CB8EB9A55039AA9B /* CareVoiceAI/Networking/APIError.swift */,
 				E284B655C971A1DABF51B18E /* CareVoiceAI/Networking/AsyncPoller.swift */,
 				B575BC719F15E4C8C57FFAA5 /* CareVoiceAI/Networking/DemoAPIService.swift */,
+				42562BCCDCCB140C1445C108 /* CareVoiceAI/Networking/DemoPatientSeed.swift */,
 				A4B66D9652F470A4427D25A0 /* CareVoiceAI/Networking/MultipartFormDataBuilder.swift */,
+				B0A425CEB2ECB74E6EF163B5 /* CareVoiceAI/Networking/TokenRefreshCoordinator.swift */,
 				2FF961B535D67325CB77F1B5 /* CareVoiceAI/Networking/TokenStore.swift */,
 				9D1E0948A36A9A0197FE1650 /* CareVoiceAI/Services/AudioCache.swift */,
 				4F7412BFD2FD846680FA40A6 /* CareVoiceAI/Services/AudioPlaybackService.swift */,
 				F376333CE771134CE75E7B7D /* CareVoiceAI/Services/AudioRecorderService.swift */,
 				7D2B070B007361B2CB1121CF /* CareVoiceAI/Services/HapticsManager.swift */,
+				DE8B744186637826F2368C95 /* CareVoiceAI/Services/MedicationAdherenceTracker.swift */,
+				910729AF91B3F28053D6F3D9 /* CareVoiceAI/Services/MorningRoutineTracker.swift */,
 				36C10F15442DFFE396BC2D5B /* CareVoiceAI/Services/NotificationManager.swift */,
 				5C6AF746E6183CC5EEA77DA4 /* CareVoiceAI/Services/OfflineUploadQueue.swift */,
+				61028298C121D8FC4314EA39 /* CareVoiceAI/Services/PatientNavigationCoordinator.swift */,
 				08A5346422C69BF2727FC738 /* CareVoiceAI/Services/ReachabilityMonitor.swift */,
 				BAA4DF0C01391C6C8CAADF35 /* CareVoiceAI/Services/SessionManager.swift */,
+				E1B1663873F371B0D292FEB1 /* CareVoiceAI/Services/SpeechReminderService.swift */,
 				9C7E1FFEAAFFD26B997DB590 /* CareVoiceAI/Utils/AccessibilityHelpers.swift */,
 				42464B861A4D2B8697BA0CCD /* CareVoiceAI/Utils/DateFormatters.swift */,
 				5CEC25BCFB284480A411E64B /* CareVoiceAI/Utils/FileStorage.swift */,
 				89932748EEC85E82CC804BE2 /* CareVoiceAI/Utils/ImageResize.swift */,
+				9C241E63212F61031C6327C5 /* CareVoiceAI/Utils/KeyboardDismissal.swift */,
 				13A180B1E96B247E37B85AE7 /* CareVoiceAI/Utils/Localized.swift */,
+				9FDB3ABC49D8825DD7018C47 /* CareVoiceAI/Utils/NetworkDeviceHints.swift */,
+				87EB1C0658B4BCC004EFDB41 /* CareVoiceAI/Utils/PatientInputValidator.swift */,
+				130B2152DCBC3DE2ED017702 /* CareVoiceAI/Utils/PhoneDialer.swift */,
 				8F65EB01A86AD52FAA5C2983 /* CareVoiceAI/Utils/StringExtensions.swift */,
+				81AC60EF954673401693C8B2 /* CareVoiceAI/Utils/UploadLimits.swift */,
 				BBBEA03334C3DCC06E9B791E /* CareVoiceAI/ViewModels/Auth/AuthViewModels.swift */,
 				7CD9C40DDAA33CAABA07DBCD /* CareVoiceAI/ViewModels/NurseRole/StaffViewModels.swift */,
 				81990FF1AD7BDE57866ABFCE /* CareVoiceAI/ViewModels/PatientRole/PatientViewModels.swift */,
@@ -224,14 +274,18 @@
 				DF8F78075C106C1F59B5D8F9 /* CareVoiceAI/Views/NurseRole/StaffDashboardView.swift */,
 				25B08BBEE92CFFC9050E3622 /* CareVoiceAI/Views/NurseRole/StaffRootView.swift */,
 				6E5A560D34A9A6570698DF17 /* CareVoiceAI/Views/PatientRole/AppointmentListView.swift */,
+				989A22408105FFB757D644FC /* CareVoiceAI/Views/PatientRole/CameraCaptureView.swift */,
 				1DB0D8B8248CAF2BF8F122C6 /* CareVoiceAI/Views/PatientRole/CheckinHistoryView.swift */,
 				F0FE3C2F8CBBD976606D407E /* CareVoiceAI/Views/PatientRole/FaceVerificationPlaceholderView.swift */,
 				1E72CA21C0213FAC477C3E51 /* CareVoiceAI/Views/PatientRole/HotlineView.swift */,
+				74753C41CCC69D423DC4D8A5 /* CareVoiceAI/Views/PatientRole/MedicationAdherenceView.swift */,
 				D6E632F519D82318D5E659E9 /* CareVoiceAI/Views/PatientRole/MedicationListView.swift */,
 				2E0C48059B60BA28C6CA9B47 /* CareVoiceAI/Views/PatientRole/PatientHomeView.swift */,
 				CCFDD455582B7AFF61ABB32C /* CareVoiceAI/Views/PatientRole/PatientRootView.swift */,
 				61EB5877161A7C8BA9EA6B70 /* CareVoiceAI/Views/PatientRole/TodayCheckinView.swift */,
+				D7E50EFD3ED2FD8626A01302 /* CareVoiceAI/Views/Settings/BackendSetupView.swift */,
 				EAD82355FED45D3158A56D59 /* CareVoiceAI/Views/Settings/SettingsView.swift */,
+				D319DCEF3EDD4B2BC576A44F /* CareVoiceAI/Views/Shared/CareVoiceLogo.swift */,
 				F2A3E11B26B1B52736AA002B /* CareVoiceAI/Views/Shared/DesignSystem.swift */,
 				F8B5ECB927231DF7E5ABD9AB /* CareVoiceAI/Views/Shared/EmptyStateView.swift */,
 				7ADA6B902050E640688A6B58 /* CareVoiceAI/Views/Shared/ErrorBannerView.swift */,
@@ -242,7 +296,10 @@
 				9F0B9F5C9BDD9452A58A2F0B /* CareVoiceAI/Views/Shared/PrimaryButton.swift */,
 				B07BCDAA789B52A750F30C5B /* CareVoiceAI/Views/Shared/RecordingButton.swift */,
 				C3C951D63DEAA03A12825E2B /* CareVoiceAI/Views/Shared/RiskBadge.swift */,
+				90764F5AD6C047C80D28C964 /* CareVoiceAI/Views/Shared/SpeakingAvatarView.swift */,
 				91062F035CA23A35B8B6DF0B /* CareVoiceAI/Views/Shared/TimelineEntryRow.swift */,
+				0AE98D102F617B2891FCE718 /* CareVoiceAI/Views/Shared/VisualComponents.swift */,
+				28D934F3C543C067B9081DE8 /* CareVoiceAI/Views/Shared/WowExperienceComponents.swift */,
 				8A6FD71FC33E016D0E781302 /* CareVoiceAI/Resources/Assets.xcassets */,
 				8D42733D4197DC99A6C32C89 /* CareVoiceAI/Resources/vi.lproj/Localizable.strings */,
 			);
@@ -332,6 +389,7 @@
 				77441ECDFB18F4C6C9EA5F07 /* CareVoiceAI/App/AppDelegate.swift in Sources */,
 				1DA0E5D10F7371463DD4A767 /* CareVoiceAI/App/RootView.swift in Sources */,
 				5126359B1376719CBF776773 /* CareVoiceAI/CareVoiceAIApp.swift in Sources */,
+				D065363C0630D4C9D20A5345 /* CareVoiceAI/Models/AdherenceModels.swift in Sources */,
 				CF85998057404495280A5E25 /* CareVoiceAI/Models/AuthModels.swift in Sources */,
 				BE45F8A364578641C6558C27 /* CareVoiceAI/Models/CheckinModels.swift in Sources */,
 				7B066DE21DC67E4F0BE903A5 /* CareVoiceAI/Models/CommonModels.swift in Sources */,
@@ -345,22 +403,33 @@
 				F14D0C3D16975CB4BD82055F /* CareVoiceAI/Networking/APIError.swift in Sources */,
 				01A5A9D4558CA8870ADEB8EE /* CareVoiceAI/Networking/AsyncPoller.swift in Sources */,
 				D8ADC82CFB8FFA42DA61D87D /* CareVoiceAI/Networking/DemoAPIService.swift in Sources */,
+				C03FD50E8F904B9B6FEF5D3C /* CareVoiceAI/Networking/DemoPatientSeed.swift in Sources */,
 				47D9DED401CDBD42E43BAE56 /* CareVoiceAI/Networking/MultipartFormDataBuilder.swift in Sources */,
+				2D9F6BCD994BAFE72DD41CE8 /* CareVoiceAI/Networking/TokenRefreshCoordinator.swift in Sources */,
 				46BA52FBA3ECDF3A3945BCA3 /* CareVoiceAI/Networking/TokenStore.swift in Sources */,
 				6908A0B1936BE88188745F5C /* CareVoiceAI/Services/AudioCache.swift in Sources */,
 				43D5FBD609757BB86E935EF7 /* CareVoiceAI/Services/AudioPlaybackService.swift in Sources */,
 				0E52179C53EA9852A4E6C231 /* CareVoiceAI/Services/AudioRecorderService.swift in Sources */,
 				8C19F109A4CF0C55A15BF9EA /* CareVoiceAI/Services/HapticsManager.swift in Sources */,
+				3A9EB38D390EB6BAAB595D85 /* CareVoiceAI/Services/MedicationAdherenceTracker.swift in Sources */,
+				8DEC522360DC1213FD31EB6F /* CareVoiceAI/Services/MorningRoutineTracker.swift in Sources */,
 				022C0E342000D3A80DC99D65 /* CareVoiceAI/Services/NotificationManager.swift in Sources */,
 				252639F1DB06C9831717774F /* CareVoiceAI/Services/OfflineUploadQueue.swift in Sources */,
+				95559BBA66C63AD248A846D5 /* CareVoiceAI/Services/PatientNavigationCoordinator.swift in Sources */,
 				9AF9B43DD9A1600F40729E63 /* CareVoiceAI/Services/ReachabilityMonitor.swift in Sources */,
 				24EDE637C139F22F8536CEA2 /* CareVoiceAI/Services/SessionManager.swift in Sources */,
+				6BFDFDF1FB7BB4B145E65D01 /* CareVoiceAI/Services/SpeechReminderService.swift in Sources */,
 				F18A1377B3004B5AED17D9FB /* CareVoiceAI/Utils/AccessibilityHelpers.swift in Sources */,
 				61CE10E434383AAEDCA0FCFA /* CareVoiceAI/Utils/DateFormatters.swift in Sources */,
 				ED32ABF1DCCA943B11CC6BC4 /* CareVoiceAI/Utils/FileStorage.swift in Sources */,
 				25E29746C4EBB1E8AD2DA762 /* CareVoiceAI/Utils/ImageResize.swift in Sources */,
+				4F364BB60B48572A9A4C4F4B /* CareVoiceAI/Utils/KeyboardDismissal.swift in Sources */,
 				6CBAE023773DEFD2417132DD /* CareVoiceAI/Utils/Localized.swift in Sources */,
+				86C2E572FE9AF6BB8BE9F1FE /* CareVoiceAI/Utils/NetworkDeviceHints.swift in Sources */,
+				2945406D2E2ED7A02833C0F2 /* CareVoiceAI/Utils/PatientInputValidator.swift in Sources */,
+				5B6895CFEBF44AABF5FCE55A /* CareVoiceAI/Utils/PhoneDialer.swift in Sources */,
 				BF843636084660433FE16AA5 /* CareVoiceAI/Utils/StringExtensions.swift in Sources */,
+				A19C2F757A7686628C3BE905 /* CareVoiceAI/Utils/UploadLimits.swift in Sources */,
 				24E4CBB06D9E1581D37CF79B /* CareVoiceAI/ViewModels/Auth/AuthViewModels.swift in Sources */,
 				A67D96772F54154AE494B415 /* CareVoiceAI/ViewModels/NurseRole/StaffViewModels.swift in Sources */,
 				4B96D20F78D81BF964F05703 /* CareVoiceAI/ViewModels/PatientRole/PatientViewModels.swift in Sources */,
@@ -377,14 +446,18 @@
 				0C95271C454DAB980350E81A /* CareVoiceAI/Views/NurseRole/StaffDashboardView.swift in Sources */,
 				F5E6A7A8AB3BBE1CD60A141D /* CareVoiceAI/Views/NurseRole/StaffRootView.swift in Sources */,
 				9E59D142849CAF0C79A43785 /* CareVoiceAI/Views/PatientRole/AppointmentListView.swift in Sources */,
+				FC48EDFA29AB2E33391E4446 /* CareVoiceAI/Views/PatientRole/CameraCaptureView.swift in Sources */,
 				C813063810F32C6401A99C07 /* CareVoiceAI/Views/PatientRole/CheckinHistoryView.swift in Sources */,
 				1C7974235208ABE217B54A1B /* CareVoiceAI/Views/PatientRole/FaceVerificationPlaceholderView.swift in Sources */,
 				D9C03D18A3F9C738ED1F7C15 /* CareVoiceAI/Views/PatientRole/HotlineView.swift in Sources */,
+				A7ED5ED9C89435D0F145D5B9 /* CareVoiceAI/Views/PatientRole/MedicationAdherenceView.swift in Sources */,
 				E64CA92C1B547A4BAA15E414 /* CareVoiceAI/Views/PatientRole/MedicationListView.swift in Sources */,
 				2E96CCAC09E1AE423FC54821 /* CareVoiceAI/Views/PatientRole/PatientHomeView.swift in Sources */,
 				4E92F847B3B99F8461A73A7F /* CareVoiceAI/Views/PatientRole/PatientRootView.swift in Sources */,
 				383780BB765626C0593CABEB /* CareVoiceAI/Views/PatientRole/TodayCheckinView.swift in Sources */,
+				6422EBD95A1BFC21F5C75863 /* CareVoiceAI/Views/Settings/BackendSetupView.swift in Sources */,
 				E369956BA3B0148C3633F54F /* CareVoiceAI/Views/Settings/SettingsView.swift in Sources */,
+				FCEC68818B8BE8C7EACC2821 /* CareVoiceAI/Views/Shared/CareVoiceLogo.swift in Sources */,
 				CD4FF333BB92419C662D1D5D /* CareVoiceAI/Views/Shared/DesignSystem.swift in Sources */,
 				6792EF76A5E71C164E310EC2 /* CareVoiceAI/Views/Shared/EmptyStateView.swift in Sources */,
 				AA6AD1DC9B634E556CBCFD64 /* CareVoiceAI/Views/Shared/ErrorBannerView.swift in Sources */,
@@ -395,7 +468,10 @@
 				255D4CBECE7807F0D5D03BD8 /* CareVoiceAI/Views/Shared/PrimaryButton.swift in Sources */,
 				9C8F0D40F410702A8316CE4F /* CareVoiceAI/Views/Shared/RecordingButton.swift in Sources */,
 				286CA588A22CF5393254BD69 /* CareVoiceAI/Views/Shared/RiskBadge.swift in Sources */,
+				7EAC57D308687A61C57F89B9 /* CareVoiceAI/Views/Shared/SpeakingAvatarView.swift in Sources */,
 				B3F70475FE4CB6EA5AAED9B2 /* CareVoiceAI/Views/Shared/TimelineEntryRow.swift in Sources */,
+				34E046C38DD3D5CDA61DF4E8 /* CareVoiceAI/Views/Shared/VisualComponents.swift in Sources */,
+				9FF97E4327A8DBB260CE35DF /* CareVoiceAI/Views/Shared/WowExperienceComponents.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -462,6 +538,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = CareVoicePrimary;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
@@ -532,6 +609,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = CareVoicePrimary;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;

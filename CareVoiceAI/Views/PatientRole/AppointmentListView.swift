@@ -28,21 +28,26 @@ struct AppointmentListView: View {
                                 .font(.body)
                                 .foregroundColor(.secondary)
                         }
-                        SecondaryButton(title: L10n.text("appointments.remind_me"), systemImage: "bell.fill") {
-                            Task { @MainActor in
-                                _ = await NotificationManager.shared.requestPermissionAtValueMoment()
-                                NotificationManager.shared.scheduleAppointmentReminder(id: appointment.id, date: appointment.appointmentAt)
-                                HapticsManager.success()
-                            }
+                        if appointment.appointmentAt > Date() {
+                            Label(
+                                L10n.text("appointments.reminder_auto"),
+                                systemImage: "bell.badge"
+                            )
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
                         }
                     }
                     .padding(.vertical, CVSpacing.sm)
                 }
                 .listStyle(PlainListStyle())
+                .cvDismissKeyboardOnScroll()
                 .refreshable { await viewModel.load() }
             }
         }
         .navigationTitle(L10n.appointments)
-        .task { await viewModel.load() }
+        .task {
+            await viewModel.load()
+            await viewModel.scheduleRemindersIfNeeded()
+        }
     }
 }

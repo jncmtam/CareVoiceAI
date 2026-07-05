@@ -8,10 +8,7 @@ nonisolated final class APIClient: @unchecked Sendable {
     private let tokenStore: TokenStore
 
     var baseURL: URL {
-        let configured = UserDefaults.standard.string(forKey: AppConstants.apiBaseURLKey)
-            ?? Bundle.main.object(forInfoDictionaryKey: "CAREVOICE_API_BASE_URL") as? String
-            ?? AppConstants.defaultBaseURL
-        return URL(string: configured) ?? URL(string: AppConstants.defaultBaseURL)!
+        URL(string: AppConstants.apiBaseURL) ?? URL(string: AppConstants.defaultBaseURL)!
     }
 
     init(session: URLSession = .shared, tokenStore: TokenStore = .shared) {
@@ -20,15 +17,11 @@ nonisolated final class APIClient: @unchecked Sendable {
     }
 
     func send<Response: Decodable>(_ endpoint: APIEndpoint, requiresAuth: Bool = true) async throws -> Response {
-        let request = try makeRequest(endpoint, requiresAuth: requiresAuth)
-        let (data, response) = try await perform(request)
-        return try decode(Response.self, from: data, response: response)
+        try await send(endpoint, requiresAuth: requiresAuth, allowRefreshRetry: true)
     }
 
     func sendEmpty(_ endpoint: APIEndpoint, requiresAuth: Bool = true) async throws {
-        let request = try makeRequest(endpoint, requiresAuth: requiresAuth)
-        let (data, response) = try await perform(request)
-        _ = try validate(data: data, response: response)
+        try await sendEmpty(endpoint, requiresAuth: requiresAuth, allowRefreshRetry: true)
     }
 
     func upload<Response: Decodable>(
@@ -36,6 +29,73 @@ nonisolated final class APIClient: @unchecked Sendable {
         fields: [String: String],
         files: [MultipartFile],
         requiresAuth: Bool = true
+    ) async throws -> Response {
+        try await upload(path: path, fields: fields, files: files, requiresAuth: requiresAuth, allowRefreshRetry: true)
+    }
+
+    private func send<Response: Decodable>(
+        _ endpoint: APIEndpoint,
+        requiresAuth: Bool,
+        allowRefreshRetry: Bool
+    ) async throws -> Response {
+        do {
+            return try await sendOnce(endpoint, requiresAuth: requiresAuth)
+        } catch {
+            guard allowRefreshRetry, shouldRefreshAfter(error: error, requiresAuth: requiresAuth, path: endpoint.path) else {
+                throw error
+            }
+            try await refreshAccessToken()
+            return try await send(endpoint, requiresAuth: requiresAuth, allowRefreshRetry: false)
+        }
+    }
+
+    private func sendEmpty(_ endpoint: APIEndpoint, requiresAuth: Bool, allowRefreshRetry: Bool) async throws {
+        do {
+            try await sendEmptyOnce(endpoint, requiresAuth: requiresAuth)
+        } catch {
+            guard allowRefreshRetry, shouldRefreshAfter(error: error, requiresAuth: requiresAuth, path: endpoint.path) else {
+                throw error
+            }
+            try await refreshAccessToken()
+            try await sendEmpty(endpoint, requiresAuth: requiresAuth, allowRefreshRetry: false)
+        }
+    }
+
+    private func upload<Response: Decodable>(
+        path: String,
+        fields: [String: String],
+        files: [MultipartFile],
+        requiresAuth: Bool,
+        allowRefreshRetry: Bool
+    ) async throws -> Response {
+        do {
+            return try await uploadOnce(path: path, fields: fields, files: files, requiresAuth: requiresAuth)
+        } catch {
+            guard allowRefreshRetry, shouldRefreshAfter(error: error, requiresAuth: requiresAuth, path: path) else {
+                throw error
+            }
+            try await refreshAccessToken()
+            return try await upload(path: path, fields: fields, files: files, requiresAuth: requiresAuth, allowRefreshRetry: false)
+        }
+    }
+
+    private func sendOnce<Response: Decodable>(_ endpoint: APIEndpoint, requiresAuth: Bool) async throws -> Response {
+        let request = try makeRequest(endpoint, requiresAuth: requiresAuth)
+        let (data, response) = try await perform(request)
+        return try decode(Response.self, from: data, response: response)
+    }
+
+    private func sendEmptyOnce(_ endpoint: APIEndpoint, requiresAuth: Bool) async throws {
+        let request = try makeRequest(endpoint, requiresAuth: requiresAuth)
+        let (data, response) = try await perform(request)
+        _ = try validate(data: data, response: response)
+    }
+
+    private func uploadOnce<Response: Decodable>(
+        path: String,
+        fields: [String: String],
+        files: [MultipartFile],
+        requiresAuth: Bool
     ) async throws -> Response {
         let builder = MultipartFormDataBuilder()
         let body = builder.build(fields: fields, files: files)
@@ -45,7 +105,40 @@ nonisolated final class APIClient: @unchecked Sendable {
             headers: ["Content-Type": builder.contentType],
             body: body
         )
-        return try await send(endpoint, requiresAuth: requiresAuth)
+        return try await sendOnce(endpoint, requiresAuth: requiresAuth)
+    }
+
+    private func shouldRefreshAfter(error: Error, requiresAuth: Bool, path: String) -> Bool {
+        guard requiresAuth, path != "auth/refresh", tokenStore.refreshToken != nil else {
+            return false
+        }
+        guard case APIError.server(_, _, let statusCode, _) = error, statusCode == 401 else {
+            return false
+        }
+        return true
+    }
+
+    private func refreshAccessToken() async throws {
+        try await TokenRefreshCoordinator.shared.refresh(using: tokenStore) { [self] in
+            try await self.exchangeRefreshToken()
+        }
+    }
+
+    private func exchangeRefreshToken() async throws -> RefreshTokenResponse {
+        if AppConstants.isDemoMode {
+            guard let refreshToken = tokenStore.refreshToken else {
+                throw APIError.missingToken
+            }
+            return try await DemoAPIService.shared.refreshToken(refreshToken)
+        }
+        guard let refreshToken = tokenStore.refreshToken else {
+            throw APIError.missingToken
+        }
+        let body = try encodedBody(RefreshTokenRequest(refreshToken: refreshToken))
+        return try await sendOnce(
+            APIEndpoint(method: .post, path: "auth/refresh", body: body),
+            requiresAuth: false
+        )
     }
 
     private func makeRequest(_ endpoint: APIEndpoint, requiresAuth: Bool) throws -> URLRequest {
@@ -90,10 +183,10 @@ nonisolated final class APIClient: @unchecked Sendable {
             case .timedOut:
                 throw APIError.timeout
             default:
-                throw APIError.network(message: error.localizedDescription)
+                throw APIError.network(message: L10n.errorDefault)
             }
         } catch {
-            throw APIError.unknown(message: error.localizedDescription)
+            throw APIError.unknown(message: L10n.errorDefault)
         }
     }
 
@@ -167,6 +260,15 @@ extension APIClient {
         return response
     }
 
+    func loginPatient(login: String, password: String) async throws -> AuthResponse {
+        if AppConstants.isDemoMode {
+            return try await DemoAPIService.shared.loginPatient(login: login, password: password)
+        }
+        let body = try encodedBody(PatientPasswordLoginRequest(login: login, password: password, deviceId: DeviceIdentity.deviceID))
+        let response: AuthResponse = try await send(APIEndpoint(method: .post, path: "auth/patient/login", body: body), requiresAuth: false)
+        return response
+    }
+
     func loginPatientCode(patientCode: String, phoneLast4: String) async throws -> AuthResponse {
         if AppConstants.isDemoMode {
             return try await DemoAPIService.shared.loginPatientCode(patientCode: patientCode, phoneLast4: phoneLast4)
@@ -218,6 +320,24 @@ extension APIClient {
         return response
     }
 
+    func updatePatient(id: String, request: PatientUpdateRequest) async throws -> PatientResponse {
+        if AppConstants.isDemoMode {
+            return try await DemoAPIService.shared.updatePatient(id: id, request: request)
+        }
+        let response: PatientResponse = try await send(
+            APIEndpoint(method: .patch, path: "patients/\(id)", body: try encodedBody(request))
+        )
+        return response
+    }
+
+    func deletePatient(id: String) async throws -> PatientDeleteResponse {
+        if AppConstants.isDemoMode {
+            return try await DemoAPIService.shared.deletePatient(id: id)
+        }
+        let response: PatientDeleteResponse = try await send(APIEndpoint(method: .delete, path: "patients/\(id)"))
+        return response
+    }
+
     func myPatientProfile() async throws -> PatientResponse {
         if AppConstants.isDemoMode {
             return try await DemoAPIService.shared.myPatientProfile()
@@ -250,12 +370,21 @@ extension APIClient {
         return response
     }
 
+    func appointments(patientId: String) async throws -> AppointmentListResponse {
+        if AppConstants.isDemoMode {
+            return try await DemoAPIService.shared.appointments(patientId: patientId)
+        }
+        let response: AppointmentListResponse = try await send(APIEndpoint(method: .get, path: "patients/\(patientId)/appointments"))
+        return response
+    }
+
     func uploadDocument(patientId: String, documentType: DocumentType, mode: OcrMode, fileURL: URL) async throws -> DocumentUploadResponse {
         if AppConstants.isDemoMode {
             return try await DemoAPIService.shared.uploadDocument(patientId: patientId, documentType: documentType, mode: mode, fileURL: fileURL)
         }
+        try UploadLimits.validateDocument(fileURL: fileURL)
         let data = try Data(contentsOf: fileURL)
-        let file = MultipartFile(fieldName: "file", fileName: fileURL.lastPathComponent, mimeType: fileURL.inferredMimeType, data: data)
+        let file = MultipartFile(fieldName: "file", fileName: fileURL.lastPathComponent, mimeType: fileURL.uploadMimeType, data: data)
         let response: DocumentUploadResponse = try await upload(
             path: "patients/\(patientId)/documents",
             fields: [
@@ -308,23 +437,78 @@ extension APIClient {
         return response
     }
 
-    func submitCheckin(checkinId: String, audioURL: URL?, quickAnswerId: String?, duration: TimeInterval?) async throws -> SubmitCheckinResponse {
+    func transcribeCheckinAudio(
+        checkinId: String,
+        audioURL: URL,
+        duration: TimeInterval?
+    ) async throws -> CheckinTranscribeResponse {
         if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.submitCheckin(checkinId: checkinId, audioURL: audioURL, quickAnswerId: quickAnswerId, duration: duration)
+            return try await DemoAPIService.shared.transcribeCheckinAudio(
+                checkinId: checkinId,
+                audioURL: audioURL,
+                duration: duration
+            )
+        }
+        var fields: [String: String] = [:]
+        if let duration {
+            fields["recorded_duration_seconds"] = String(Int(duration.rounded()))
+        }
+        try UploadLimits.validateAudio(fileURL: audioURL)
+        let files = [
+            MultipartFile(
+                fieldName: "audio_file",
+                fileName: audioURL.lastPathComponent,
+                mimeType: audioURL.uploadMimeType,
+                data: try Data(contentsOf: audioURL)
+            )
+        ]
+        let response: CheckinTranscribeResponse = try await upload(
+            path: "checkins/\(checkinId)/transcribe",
+            fields: fields,
+            files: files
+        )
+        return response
+    }
+
+    func submitCheckin(
+        checkinId: String,
+        audioURL: URL?,
+        quickAnswerId: String?,
+        confirmedTranscript: String? = nil,
+        patientDeclaredRiskLevel: RiskLevel? = nil,
+        duration: TimeInterval?,
+        clientRequestId: String = UUID().uuidString
+    ) async throws -> SubmitCheckinResponse {
+        if AppConstants.isDemoMode {
+            return try await DemoAPIService.shared.submitCheckin(
+                checkinId: checkinId,
+                audioURL: audioURL,
+                quickAnswerId: quickAnswerId,
+                confirmedTranscript: confirmedTranscript,
+                patientDeclaredRiskLevel: patientDeclaredRiskLevel,
+                duration: duration
+            )
         }
         var fields = [
             "client_recorded_at": ISO8601DateFormatter().string(from: Date()),
-            "client_request_id": UUID().uuidString
+            "client_request_id": clientRequestId
         ]
         if let quickAnswerId {
             fields["quick_answer_id"] = quickAnswerId
+        }
+        if let confirmedTranscript, !confirmedTranscript.cvTrimmed.isEmpty {
+            fields["confirmed_transcript"] = confirmedTranscript.cvTrimmed
+        }
+        if let patientDeclaredRiskLevel {
+            fields["patient_declared_risk_level"] = patientDeclaredRiskLevel.rawValue
         }
         if let duration {
             fields["recorded_duration_seconds"] = String(Int(duration.rounded()))
         }
         var files: [MultipartFile] = []
         if let audioURL {
-            files.append(MultipartFile(fieldName: "audio_file", fileName: audioURL.lastPathComponent, mimeType: audioURL.inferredMimeType, data: try Data(contentsOf: audioURL)))
+            try UploadLimits.validateAudio(fileURL: audioURL)
+            files.append(MultipartFile(fieldName: "audio_file", fileName: audioURL.lastPathComponent, mimeType: audioURL.uploadMimeType, data: try Data(contentsOf: audioURL)))
         }
         let response: SubmitCheckinResponse = try await upload(path: "checkins/\(checkinId)/responses", fields: fields, files: files)
         return response
@@ -358,9 +542,20 @@ extension APIClient {
         return response
     }
 
-    func priorityPatients(page: Int = 1, query: String? = nil, riskLevel: RiskLevel? = nil) async throws -> PriorityPatientListResponse {
+    func priorityPatients(
+        page: Int = 1,
+        query: String? = nil,
+        riskLevel: RiskLevel? = nil,
+        handlingStatus: HandlingStatus? = nil,
+        actionableOnly: Bool = false
+    ) async throws -> PriorityPatientListResponse {
         if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.priorityPatients(page: page, query: query, riskLevel: riskLevel)
+            return try await DemoAPIService.shared.priorityPatients(
+                page: page,
+                query: query,
+                riskLevel: riskLevel,
+                actionableOnly: actionableOnly
+            )
         }
         var items = [
             URLQueryItem(name: "page", value: "\(page)"),
@@ -371,6 +566,12 @@ extension APIClient {
         }
         if let riskLevel {
             items.append(URLQueryItem(name: "risk_level", value: riskLevel.rawValue))
+        }
+        if let handlingStatus {
+            items.append(URLQueryItem(name: "handling_status", value: handlingStatus.rawValue))
+        }
+        if actionableOnly {
+            items.append(URLQueryItem(name: "actionable_only", value: "true"))
         }
         let response: PriorityPatientListResponse = try await send(APIEndpoint(method: .get, path: "staff/patients/priority", queryItems: items))
         return response
@@ -388,11 +589,17 @@ extension APIClient {
         return response
     }
 
-    func updateHandling(patientId: String, entryId: String, status: HandlingStatus, note: String?) async throws -> HandlingUpdateResponse {
+    func updateHandling(
+        patientId: String,
+        entryId: String,
+        status: HandlingStatus,
+        note: String?,
+        callbackAt: Date? = nil
+    ) async throws -> HandlingUpdateResponse {
         if AppConstants.isDemoMode {
             return try await DemoAPIService.shared.updateHandling(patientId: patientId, entryId: entryId, status: status, note: note)
         }
-        let body = try encodedBody(HandlingUpdateRequest(handlingStatus: status, note: note.nilIfEmpty, callbackAt: status == .calledBack ? Date() : nil))
+        let body = try encodedBody(HandlingUpdateRequest(handlingStatus: status, note: note.nilIfEmpty, callbackAt: callbackAt))
         let response: HandlingUpdateResponse = try await send(APIEndpoint(method: .patch, path: "staff/patients/\(patientId)/timeline/\(entryId)/handling", body: body))
         return response
     }
@@ -406,13 +613,42 @@ extension APIClient {
         return response
     }
 
-    func askHotlineVoice(patientId: String?, audioURL: URL, duration: TimeInterval?) async throws -> HotlineQuestionResponse {
+    func askHotlineVoice(
+        patientId: String?,
+        audioURL: URL,
+        duration: TimeInterval?,
+        clientRequestId: String = UUID().uuidString
+    ) async throws -> HotlineQuestionResponse {
+        let audioData = try Data(contentsOf: audioURL)
+        return try await askHotlineVoice(
+            patientId: patientId,
+            audioData: audioData,
+            fileName: audioURL.lastPathComponent,
+            mimeType: audioURL.uploadMimeType,
+            duration: duration,
+            clientRequestId: clientRequestId
+        )
+    }
+
+    func askHotlineVoice(
+        patientId: String?,
+        audioData: Data,
+        fileName: String,
+        mimeType: String,
+        duration: TimeInterval?,
+        clientRequestId: String
+    ) async throws -> HotlineQuestionResponse {
         if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.askHotlineVoice(patientId: patientId, audioURL: audioURL, duration: duration)
+            return try await DemoAPIService.shared.askHotlineVoice(
+                patientId: patientId,
+                audioData: audioData,
+                duration: duration
+            )
         }
+        try UploadLimits.validateAudio(data: audioData, fileName: fileName)
         var fields = [
             "mode": "voice",
-            "client_request_id": UUID().uuidString
+            "client_request_id": clientRequestId
         ]
         if let patientId {
             fields["patient_id"] = patientId
@@ -420,7 +656,7 @@ extension APIClient {
         if let duration {
             fields["recorded_duration_seconds"] = String(Int(duration.rounded()))
         }
-        let file = MultipartFile(fieldName: "audio_file", fileName: audioURL.lastPathComponent, mimeType: audioURL.inferredMimeType, data: try Data(contentsOf: audioURL))
+        let file = MultipartFile(fieldName: "audio_file", fileName: fileName, mimeType: mimeType, data: audioData)
         let response: HotlineQuestionResponse = try await upload(path: "hotline/questions", fields: fields, files: [file])
         return response
     }
@@ -509,6 +745,44 @@ extension APIClient {
         let response: FaceVerificationSessionResponse = try await send(APIEndpoint(method: .post, path: "identity/face_verification/sessions", body: try encodedBody(request)))
         return response
     }
+
+    func faceVerificationStatus(sessionId: String) async throws -> FaceVerificationStatusResponse {
+        if AppConstants.isDemoMode {
+            return try await DemoAPIService.shared.faceVerificationStatus(sessionId: sessionId)
+        }
+        let response: FaceVerificationStatusResponse = try await send(APIEndpoint(method: .get, path: "identity/face_verification/sessions/\(sessionId)"))
+        return response
+    }
+
+    func uploadFaceVerification(sessionId: String, imageData: Data) async throws -> FaceVerificationUploadResponse {
+        if AppConstants.isDemoMode {
+            return try await DemoAPIService.shared.uploadFaceVerification(sessionId: sessionId, imageData: imageData)
+        }
+        let file = MultipartFile(fieldName: "image_file", fileName: "face.jpg", mimeType: "image/jpeg", data: imageData)
+        let response: FaceVerificationUploadResponse = try await upload(
+            path: "identity/face_verification/sessions/\(sessionId)/upload",
+            fields: [:],
+            files: [file]
+        )
+        return response
+    }
+
+    func recordMedicationAdherence(medicationId: String, slot: String, taken: Bool) async throws -> MedicationAdherenceResponse {
+        if AppConstants.isDemoMode {
+            return try await DemoAPIService.shared.recordMedicationAdherence(medicationId: medicationId, slot: slot, taken: taken)
+        }
+        let request = MedicationAdherenceRequest(
+            medicationId: medicationId,
+            slot: slot,
+            taken: taken,
+            recordedVia: "voice",
+            clientRequestId: UUID().uuidString
+        )
+        let response: MedicationAdherenceResponse = try await send(
+            APIEndpoint(method: .post, path: "me/medications/adherence", body: try encodedBody(request))
+        )
+        return response
+    }
 }
 
 private extension String {
@@ -539,25 +813,6 @@ private extension Optional where Wrapped == String {
             return value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : value
         case .none:
             return nil
-        }
-    }
-}
-
-private extension URL {
-    var inferredMimeType: String {
-        switch pathExtension.lowercased() {
-        case "jpg", "jpeg":
-            return "image/jpeg"
-        case "png":
-            return "image/png"
-        case "pdf":
-            return "application/pdf"
-        case "wav":
-            return "audio/wav"
-        case "m4a", "aac":
-            return "audio/mp4"
-        default:
-            return "application/octet-stream"
         }
     }
 }
