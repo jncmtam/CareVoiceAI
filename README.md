@@ -17,7 +17,7 @@
 ### 1. Clone & cài backend (1 lệnh)
 
 ```bash
-git clone <repo-url> && cd HackAIthon
+git clone https://github.com/jncmtam/CareVoiceAI && cd HackAIthon
 make setup
 ```
 
@@ -25,8 +25,6 @@ Tạo file env (nếu chưa có):
 
 ```bash
 cp backend/.env.example backend/.env
-# Demo nhanh: giữ VENDOR_MOCK_MODE=true
-# Pitch VNPT thật: đặt VENDOR_MOCK_MODE=false và điền token VNPT
 ```
 
 ### 2. Chạy backend
@@ -42,9 +40,9 @@ make backend
 ### 3. Chạy iOS
 
 1. Mở `CareVoiceAI.xcodeproj` trong Xcode.
-2. **Cài đặt** → tắt **Demo mode**.
+2. **Cài đặt** 
 3. **Kết nối backend** → `http://127.0.0.1:8000/api/v1` (Simulator) hoặc `http://<IP-Mac>:8000/api/v1` (iPhone thật).
-4. Đăng nhập tài khoản demo (bên dưới).
+4. Đăng nhập tài khoản demo
 
 ### 4. Kiểm tra nhanh
 
