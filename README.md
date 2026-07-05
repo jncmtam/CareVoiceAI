@@ -40,8 +40,8 @@ make backend
 ### 3. Chạy iOS
 
 1. Mở `CareVoiceAI.xcodeproj` trong Xcode.
-2. **Cài đặt** 
-3. **Kết nối backend** → `http://127.0.0.1:8000/api/v1` (Simulator) hoặc `http://<IP-Mac>:8000/api/v1` (iPhone thật).
+2. **Cài đặt môi trường Swift code** 
+3. **Kết nối backend** → `http://127.0.0.1:8000/api/v1` (Simulator) **Hệ thống Demo trên hệ điều hành iOS**
 4. Đăng nhập tài khoản demo
 
 ### 4. Kiểm tra nhanh
