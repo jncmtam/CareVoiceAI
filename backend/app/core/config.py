@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     background_job_start_delay_seconds: float = 0.15
 
     request_timeout_seconds: float = 20.0
-    vendor_mock_mode: bool = True
+    vendor_mock_mode: bool = False
     rate_limit_enabled: bool = True
     rate_limit_requests: int = 120
     rate_limit_window_seconds: int = 60
@@ -47,9 +47,6 @@ class Settings(BaseSettings):
     vnpt_token_id: str = ""
     vnpt_token_key: str = ""
     vnpt_access_token: str = ""
-    vnpt_ekyc_token_id: str = ""
-    vnpt_ekyc_token_key: str = ""
-    vnpt_ekyc_access_token: str = ""
     vnpt_smartreader_token_id: str = ""
     vnpt_smartreader_token_key: str = ""
     vnpt_smartreader_access_token: str = ""

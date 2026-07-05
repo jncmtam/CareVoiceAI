@@ -1,8 +1,10 @@
+import asyncio
 import hashlib
 from pathlib import Path
 
 from fastapi import UploadFile
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
@@ -20,6 +22,12 @@ from app.schemas.hotline import (
 from app.services.auth import Principal
 from app.services.idempotency import IdempotencyService, request_hash
 from app.services.job_runner import job_runner
+from app.services.risk_classifier import (
+    classify_transcript,
+    merge_risk_levels,
+    risk_level_from_value,
+)
+from app.services.risk_notifications import apply_patient_risk_update
 from app.services.storage import StorageService
 from app.utils.datetime import now_utc
 from app.utils.ids import new_id
@@ -45,11 +53,13 @@ class HotlineService:
         payload_hash = request_hash(
             {"patient_id": resolved_patient_id, "mode": "text", "text": text}
         )
-        replay = await self._replay(
-            principal=principal, client_request_id=client_request_id, payload_hash=payload_hash
-        )
-        if replay:
-            return HotlineQuestionResponse.model_validate(replay)
+        if cached := await self._resolve_submission(
+            resolved_patient_id=resolved_patient_id,
+            principal=principal,
+            client_request_id=client_request_id,
+            payload_hash=payload_hash,
+        ):
+            return cached
         question = HotlineQuestion(
             id=new_id("hot"),
             patient_id=resolved_patient_id,
@@ -59,8 +69,17 @@ class HotlineService:
             client_request_id=client_request_id,
             status=JobStatus.needs_review,
         )
-        self.session.add(question)
-        await self._queue_text_for_staff(question=question, text=text)
+        try:
+            self.session.add(question)
+            await self.session.flush()
+        except IntegrityError:
+            return await self._recover_from_conflict(
+                resolved_patient_id=resolved_patient_id,
+                principal=principal,
+                client_request_id=client_request_id,
+                payload_hash=payload_hash,
+            )
+        await self._complete_text_question(question=question, text=text)
         response = self._build_response(question=question)
         await self._store(
             principal=principal,
@@ -92,11 +111,13 @@ class HotlineService:
                 "audio_sha256": hashlib.sha256(audio_bytes).hexdigest(),
             }
         )
-        replay = await self._replay(
-            principal=principal, client_request_id=client_request_id, payload_hash=payload_hash
-        )
-        if replay:
-            return HotlineQuestionResponse.model_validate(replay)
+        if cached := await self._resolve_submission(
+            resolved_patient_id=resolved_patient_id,
+            principal=principal,
+            client_request_id=client_request_id,
+            payload_hash=payload_hash,
+        ):
+            return cached
         suffix = Path(filename).suffix.lower() or ".m4a"
         stored_name = f"{new_id('file')}{suffix}"
         audio_url = await self.storage.save_bytes(
@@ -115,18 +136,30 @@ class HotlineService:
             client_request_id=client_request_id,
             status=JobStatus.transcribing,
         )
-        job = Job(
-            id=new_id("hotline_job"),
-            job_type=JobType.hotline,
-            status=JobStatus.transcribing,
-            progress=50,
-            stage="transcribing",
-            poll_after_seconds=2,
-            patient_id=resolved_patient_id,
-            source_id=question.id,
-        )
-        question.job_id = job.id
-        self.session.add_all([question, job])
+        try:
+            self.session.add(question)
+            await self.session.flush()
+            job = Job(
+                id=new_id("hotline_job"),
+                job_type=JobType.hotline,
+                status=JobStatus.transcribing,
+                progress=50,
+                stage="transcribing",
+                poll_after_seconds=2,
+                patient_id=resolved_patient_id,
+                source_id=question.id,
+            )
+            self.session.add(job)
+            await self.session.flush()
+            question.job_id = job.id
+            await self.session.flush()
+        except IntegrityError:
+            return await self._recover_from_conflict(
+                resolved_patient_id=resolved_patient_id,
+                principal=principal,
+                client_request_id=client_request_id,
+                payload_hash=payload_hash,
+            )
 
         if self.settings.vendor_mock_mode:
             await self._process_voice_question(question=question, job=job)
@@ -238,41 +271,54 @@ class HotlineService:
             next_cursor=None,
         )
 
-    async def _queue_text_for_staff(self, *, question: HotlineQuestion, text: str) -> None:
-        level, reasons = self._classify_symptoms(text)
-        question.question_text = text
-        question.transcript = text
-        question.answer_text = None
-        question.source_scope = "staff_manual"
-        question.needs_staff_review = True
-        question.risk_level = level
-        question.risk_reasons = reasons
-        question.status = JobStatus.needs_review
-        patient = await self.session.get(Patient, question.patient_id)
-        if patient:
-            patient.latest_risk_level = max(
-                [patient.latest_risk_level or RiskLevel.normal, level],
-                key=self._risk_priority,
-            )
-        await self._maybe_create_staff_alert(
-            question=question,
-            summary=text,
-            risk_level=level,
-        )
+    async def _complete_text_question(self, *, question: HotlineQuestion, text: str) -> None:
+        await self._finalize_hotline_answer(question=question, text=text, status=JobStatus.completed)
 
     async def _complete_voice_symptoms(self, *, question: HotlineQuestion, text: str) -> None:
-        level, reasons = self._classify_symptoms(text)
-        question.question_text = question.question_text or text
+        await self._finalize_hotline_answer(question=question, text=text, status=JobStatus.completed)
+
+    async def _finalize_hotline_answer(
+        self,
+        *,
+        question: HotlineQuestion,
+        text: str,
+        status: JobStatus,
+    ) -> None:
+        has_meds = await self._has_confirmed_medication(question.patient_id)
+        bot = await self.gateway.answer_hotline(
+            text=text,
+            has_confirmed_record=has_meds,
+            sender_id=question.patient_id,
+            session_id=question.id,
+        )
+        classified_level, reasons = classify_transcript(text, source="hotline")
+        bot_level = risk_level_from_value(bot.get("risk_level"))
+        level = merge_risk_levels(classified_level, bot_level)
+        bot_reasons = bot.get("reasons") or []
+        if isinstance(bot_reasons, list):
+            merged_reasons = list(dict.fromkeys([*reasons, *[str(item) for item in bot_reasons]]))
+        else:
+            merged_reasons = reasons
+
+        question.question_text = text
         question.transcript = text
-        question.answer_text = self._patient_summary(level)
-        question.source_scope = "symptom_stt"
-        question.needs_staff_review = level != RiskLevel.normal
+        question.answer_text = bot.get("answer_text") or self._patient_summary(level)
+        question.source_scope = str(bot.get("source_scope") or "smartbot")
+        question.needs_staff_review = bool(bot.get("needs_staff_review")) or level != RiskLevel.normal
         question.risk_level = level
-        question.risk_reasons = reasons
-        question.status = JobStatus.completed
+        question.risk_reasons = merged_reasons[:4]
+        question.status = JobStatus.needs_review if question.needs_staff_review else status
+
         patient = await self.session.get(Patient, question.patient_id)
-        if patient and level != RiskLevel.normal:
-            patient.latest_risk_level = level
+        if patient:
+            await apply_patient_risk_update(
+                self.session,
+                patient=patient,
+                new_level=level,
+                source_type=TimelineEntryType.hotline_question,
+                source_id=question.id,
+                summary=question.answer_text or text,
+            )
         if question.needs_staff_review:
             await self._maybe_create_staff_alert(
                 question=question,
@@ -310,37 +356,12 @@ class HotlineService:
                 risk_level=risk_level,
             )
 
-    def _classify_symptoms(self, transcript: str) -> tuple[RiskLevel, list[str]]:
-        reasons = self._keyword_reasons(transcript)
-        if any("đau ngực" in r or "khó thở" in r or "ngất" in r for r in reasons):
-            return RiskLevel.intervention, reasons
-        if reasons:
-            return RiskLevel.attention, reasons
-        return RiskLevel.normal, ["Không có triệu chứng cảnh báo trong phản hồi hôm nay"]
-
-    def _keyword_reasons(self, transcript: str) -> list[str]:
-        lower = transcript.lower()
-        reasons: list[str] = []
-        if "đau ngực" in lower:
-            reasons.append("Hotline: bệnh nhân báo đau ngực")
-        if "khó thở" in lower:
-            reasons.append("Hotline: bệnh nhân báo khó thở")
-        if "ngất" in lower:
-            reasons.append("Hotline: bệnh nhân báo ngất hoặc choáng")
-        if "chóng mặt" in lower:
-            reasons.append("Hotline: bệnh nhân báo chóng mặt")
-        if "mệt" in lower:
-            reasons.append("Hotline: bệnh nhân báo mệt bất thường")
-        if "sốt" in lower:
-            reasons.append("Hotline: bệnh nhân báo sốt")
-        return reasons
-
     def _patient_summary(self, level: RiskLevel) -> str:
         if level == RiskLevel.intervention:
             return "Bệnh nhân báo triệu chứng cảnh báo, cần nhân viên y tế gọi lại sớm."
         if level == RiskLevel.attention:
             return "Bệnh nhân có dấu hiệu cần theo dõi, điều dưỡng sẽ xem lại phản hồi."
-        return "Tình trạng ổn định theo phản hồi của bác."
+        return "Tình trạng ổn định theo phản hồi của bác sĩ."
 
     def _risk_priority(self, level: RiskLevel) -> int:
         return {
@@ -396,27 +417,98 @@ class HotlineService:
             raise APIError("forbidden", "Bạn không có quyền hỏi thay bệnh nhân này.", 403)
         return principal.patient_id
 
-    async def _replay(
-        self, *, principal: Principal, client_request_id: str, payload_hash: str
-    ) -> dict | None:
+    async def _question_for_client_request(
+        self, patient_id: str, client_request_id: str
+    ) -> HotlineQuestion | None:
+        result = await self.session.execute(
+            select(HotlineQuestion).where(
+                HotlineQuestion.patient_id == patient_id,
+                HotlineQuestion.client_request_id == client_request_id,
+                HotlineQuestion.deleted_at.is_(None),
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def _response_from_existing_question(
+        self,
+        *,
+        question: HotlineQuestion,
+        principal: Principal,
+        client_request_id: str,
+        payload_hash: str,
+    ) -> HotlineQuestionResponse:
+        completed = question.status in {JobStatus.completed, JobStatus.needs_review}
+        response = self._build_response(
+            question=question,
+            poll_after_seconds=None if completed else 2,
+        )
+        await self._store(
+            principal=principal,
+            client_request_id=client_request_id,
+            payload_hash=payload_hash,
+            response=response.model_dump(mode="json"),
+        )
+        return response
+
+    async def _recover_from_conflict(
+        self,
+        *,
+        resolved_patient_id: str,
+        principal: Principal,
+        client_request_id: str,
+        payload_hash: str,
+    ) -> HotlineQuestionResponse:
+        await self.session.rollback()
+        for _ in range(6):
+            if cached := await self._resolve_submission(
+                resolved_patient_id=resolved_patient_id,
+                principal=principal,
+                client_request_id=client_request_id,
+                payload_hash=payload_hash,
+            ):
+                return cached
+            await asyncio.sleep(0.05)
+        raise APIError(
+            "conflict",
+            "Câu hỏi hotline với client_request_id này đã tồn tại.",
+            409,
+        )
+
+    async def _resolve_submission(
+        self,
+        *,
+        resolved_patient_id: str,
+        principal: Principal,
+        client_request_id: str,
+        payload_hash: str,
+    ) -> HotlineQuestionResponse | None:
         replay = await self.idempotency.get_replay(
             scope="hotline_question",
             actor_id=principal.user_id,
             client_request_id=client_request_id,
             request_hash_value=payload_hash,
         )
+        if replay and not replay.get("_conflict"):
+            return HotlineQuestionResponse.model_validate(replay)
+
         if replay and replay.get("_conflict"):
-            # Voice uploads may finalize on device after the first byte read.
-            # Reuse the stored response instead of failing with 409.
             stored = await self.idempotency.repo.get_key(
                 scope="hotline_question",
                 actor_id=principal.user_id,
                 client_request_id=client_request_id,
             )
             if stored:
-                return stored.response_body
-            raise APIError("conflict", replay["error"], 409)
-        return replay
+                return HotlineQuestionResponse.model_validate(stored.response_body)
+
+        existing = await self._question_for_client_request(resolved_patient_id, client_request_id)
+        if existing:
+            return await self._response_from_existing_question(
+                question=existing,
+                principal=principal,
+                client_request_id=client_request_id,
+                payload_hash=payload_hash,
+            )
+        return None
 
     async def _store(
         self,

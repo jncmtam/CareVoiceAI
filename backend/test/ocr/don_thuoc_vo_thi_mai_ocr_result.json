@@ -1,0 +1,69 @@
+{
+  "raw_text": "Mã hồ sơ: VC-2026-000006\nBệnh nhân: Võ Thị Mai\nNgày sinh: 14/12/1948\nGiới tính: Nữ\nSĐT: 0987654321\nĐịa chỉ: Tân Bình, TP.HCM\nChẩn đoán: Đột quỵ cũ, Tăng huyết áp\n\nBác sĩ: BS. Lê Minh\nKhoa: Nội thần kinh\nNgày kê đơn: 05/07/2026\n\nĐƠN THUỐC:\n1. Clopidogrel 75mg — 1 viên mỗi sáng, uống sau ăn.\n2. Rosuvastatin 10mg — 1 viên buổi tối.\n3. Amlodipine 5mg — 1 viên mỗi sáng.\n4. Gabapentin 300mg — 1 viên 2 lần/ngày (sáng, tối), có thể gây buồn ngủ.\n\nTái khám Nội thần kinh sau 28 ngày.\n\nDặn dò: Không tự ý ngưng chống đông. Người nhà theo dõi nếu nói khó hoặc yếu liệt tay chân.\n\nNgười kê đơn: BS. Lê Minh",
+  "draft_patient": {
+    "full_name": "Võ Thị Mai",
+    "phone_number": "0987654321",
+    "diagnoses": [
+      "Đột quỵ cũ, Tăng huyết áp"
+    ],
+    "primary_doctor_name": "BS. Lê Minh",
+    "confidence": 0.72
+  },
+  "draft_medications": [
+    {
+      "name": "Clopidogrel",
+      "strength": "75mg",
+      "dosage": "1 viên",
+      "frequency": "Mỗi sáng",
+      "times_of_day": [
+        "morning"
+      ],
+      "instructions": "1. Clopidogrel 75mg — 1 viên mỗi sáng, uống sau ăn.",
+      "confidence": 0.7
+    },
+    {
+      "name": "Rosuvastatin",
+      "strength": "10mg",
+      "dosage": "1 viên",
+      "frequency": "Theo đơn",
+      "times_of_day": [
+        "evening"
+      ],
+      "instructions": "2. Rosuvastatin 10mg — 1 viên buổi tối.",
+      "confidence": 0.7
+    },
+    {
+      "name": "Amlodipine",
+      "strength": "5mg",
+      "dosage": "1 viên",
+      "frequency": "Mỗi sáng",
+      "times_of_day": [
+        "morning"
+      ],
+      "instructions": "3. Amlodipine 5mg — 1 viên mỗi sáng.",
+      "confidence": 0.7
+    },
+    {
+      "name": "Gabapentin",
+      "strength": "300mg",
+      "dosage": "1 viên",
+      "frequency": "2 lần/ngày",
+      "times_of_day": [
+        "morning",
+        "evening"
+      ],
+      "instructions": "4. Gabapentin 300mg — 1 viên 2 lần/ngày (sáng, tối), có thể gây buồn ngủ.",
+      "confidence": 0.7
+    }
+  ],
+  "draft_follow_up": {
+    "department": null,
+    "doctor_name": "BS. Lê Minh",
+    "appointment_at": "2026-08-02T13:38:37.265834+00:00"
+  },
+  "instructions": "Không tự ý ngưng chống đông. Người nhà theo dõi nếu nói khó hoặc yếu liệt tay chân.",
+  "warnings": [
+    "Điều dưỡng kiểm tra và chỉnh sửa trước khi lưu vào hồ sơ.",
+    "Có 4 dòng thuốc độ tin cậy thấp, cần kiểm tra lại."
+  ]
+}

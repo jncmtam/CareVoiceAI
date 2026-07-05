@@ -75,3 +75,35 @@ struct HandledByUser: Codable, Identifiable {
     let id: String
     let fullName: String
 }
+
+struct StaffNotificationItem: Codable, Identifiable {
+    let id: String
+    let patientId: String
+    let patientName: String
+    let patientCode: String?
+    let notificationType: String
+    let previousRiskLevel: RiskLevel?
+    let newRiskLevel: RiskLevel
+    let sourceType: String?
+    let sourceId: String?
+    let title: String
+    let message: String
+    let unread: Bool
+    let createdAt: Date
+    let readAt: Date?
+}
+
+struct StaffNotificationListResponse: Decodable {
+    let items: [StaffNotificationItem]
+    let unreadCount: Int
+    let page: Int
+    let perPage: Int
+    let total: Int
+    let hasNext: Bool
+}
+
+struct StaffNotificationReadResponse: Decodable {
+    let id: String
+    let unread: Bool
+    let readAt: Date?
+}

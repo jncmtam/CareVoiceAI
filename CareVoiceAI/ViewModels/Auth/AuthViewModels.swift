@@ -34,11 +34,6 @@ final class StaffLoginViewModel: ObservableObject {
         }
     }
 
-    func submitQuickLogin() async {
-        login = "nurse"
-        password = "nurse"
-        await submit()
-    }
 }
 
 @MainActor
@@ -83,12 +78,6 @@ final class PatientLoginViewModel: ObservableObject {
         } catch {
             self.error = APIError.from(error)
         }
-    }
-
-    func submitQuickLogin() async {
-        login = "patient"
-        password = "patient"
-        await loginWithPassword()
     }
 
     func requestOTP() async {

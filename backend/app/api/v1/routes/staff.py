@@ -12,6 +12,9 @@ from app.schemas.staff import (
     HandlingUpdateResponse,
     PatientTimelineResponse,
     PriorityPatientListResponse,
+    StaffNotificationListResponse,
+    StaffNotificationMarkAllReadResponse,
+    StaffNotificationReadResponse,
 )
 from app.services.auth import Principal
 from app.services.staff import StaffService
@@ -82,6 +85,52 @@ async def update_handling(
         entry_id=entry_id,
         request=request,
     )
+    await db.commit()
+    return response
+
+
+@router.get("/staff/notifications", response_model=StaffNotificationListResponse)
+async def staff_notifications(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    principal: Annotated[Principal, Depends(get_current_principal)],
+    page: int = 1,
+    per_page: int = 30,
+    unread_only: bool = False,
+) -> StaffNotificationListResponse:
+    return await StaffService(db).notifications(
+        principal=principal,
+        page=page,
+        per_page=per_page,
+        unread_only=unread_only,
+    )
+
+
+@router.patch(
+    "/staff/notifications/{notification_id}/read",
+    response_model=StaffNotificationReadResponse,
+)
+async def mark_staff_notification_read(
+    notification_id: str,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    principal: Annotated[Principal, Depends(get_current_principal)],
+) -> StaffNotificationReadResponse:
+    response = await StaffService(db).mark_notification_read(
+        principal=principal,
+        notification_id=notification_id,
+    )
+    await db.commit()
+    return response
+
+
+@router.post(
+    "/staff/notifications/mark_all_read",
+    response_model=StaffNotificationMarkAllReadResponse,
+)
+async def mark_all_staff_notifications_read(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    principal: Annotated[Principal, Depends(get_current_principal)],
+) -> StaffNotificationMarkAllReadResponse:
+    response = await StaffService(db).mark_all_notifications_read(principal=principal)
     await db.commit()
     return response
 

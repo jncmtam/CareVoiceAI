@@ -111,6 +111,22 @@ final class NotificationManager: NSObject, ObservableObject, UNUserNotificationC
         UNUserNotificationCenter.current().add(request)
     }
 
+    func scheduleStaffRiskChangeNotification(patientName: String, patientId: String, message: String) {
+        let content = UNMutableNotificationContent()
+        content.title = L10n.text("notification.staff.risk_change.title")
+        content.body = String(format: L10n.text("notification.staff.risk_change.body"), patientName, message)
+        content.sound = .defaultCritical
+        content.interruptionLevel = .timeSensitive
+        content.userInfo["patient_id"] = patientId
+        content.userInfo["notification_type"] = "risk_change"
+        let request = UNNotificationRequest(
+            identifier: "staff-risk-change-\(patientId)-\(Date().timeIntervalSince1970)",
+            content: content,
+            trigger: nil
+        )
+        UNUserNotificationCenter.current().add(request)
+    }
+
     func scheduleCriticalStaffAlert(count: Int, patientId: String? = nil, patientName: String? = nil) {
         cancelReminder(identifier: "staff-critical-alert")
         let content = UNMutableNotificationContent()

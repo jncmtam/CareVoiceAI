@@ -48,6 +48,13 @@ struct PatientProfile: Codable, Identifiable {
     let isActive: Bool?
 }
 
+struct DailyTipResponse: Decodable {
+    let tipDate: String
+    let tipText: String
+    let sourceScope: String
+    let diagnosesContext: [String]?
+}
+
 struct PatientSummary: Codable, Identifiable {
     var id: String { patientId }
     let patientId: String

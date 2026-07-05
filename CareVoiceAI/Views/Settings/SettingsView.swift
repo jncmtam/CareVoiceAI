@@ -67,21 +67,9 @@ struct SettingsView: View {
                 }
             }
 
-            Section(header: Text(L10n.text("settings.demo"))) {
-                Toggle(L10n.text("settings.demo_mode"), isOn: $viewModel.isDemoMode)
-                    .onChange(of: viewModel.isDemoMode) { enabled in
-                        viewModel.updateDemoMode(enabled)
-                    }
-
-                if viewModel.isDemoMode {
-                    Label(L10n.text("settings.demo_mode_on_hint"), systemImage: "iphone")
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                } else {
-                    NavigationLink(destination: BackendSetupView()) {
-                        Label(L10n.text("settings.connection"), systemImage: "network")
-                    }
+            Section(header: Text(L10n.text("settings.connection"))) {
+                NavigationLink(destination: BackendSetupView()) {
+                    Label(L10n.text("settings.connection"), systemImage: "network")
                 }
             }
 

@@ -9,7 +9,7 @@ from app.utils.datetime import now_utc
 
 _MED_LINE = re.compile(
     r"(?P<name>[A-Za-zÀ-ỹ][A-Za-zÀ-ỹ0-9\s\-]+?)\s+"
-    r"(?P<strength>\d+\s?(?:mg|g|ml|mcg|iu)(?:/\d+\s?(?:mg|g|ml))?)",
+    r"(?P<strength>\d+(?:\.\d+)?\s?(?:mg|g|ml|mcg|iu)(?:/\d+(?:\.\d+)?\s?(?:mg|g|ml))?)",
     re.IGNORECASE,
 )
 _PATIENT_NAME = re.compile(

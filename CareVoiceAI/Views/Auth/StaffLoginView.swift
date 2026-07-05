@@ -42,11 +42,6 @@ struct StaffLoginView: View {
                         Task { await viewModel.submit() }
                     }
                     .cvStaggeredAppear(index: 4, isVisible: appeared)
-
-                    SecondaryButton(title: L10n.text("auth.demo_login"), systemImage: "play.circle.fill") {
-                        Task { await viewModel.submitQuickLogin() }
-                    }
-                    .cvStaggeredAppear(index: 5, isVisible: appeared)
                 }
                 .padding(CVSpacing.lg)
             }

@@ -9,7 +9,6 @@ final class SettingsViewModel: ObservableObject {
         criticalStaffAlertsEnabled: true
     )
     @Published var isSaving = false
-    @Published var isDemoMode = AppConstants.isDemoMode
     @Published var apiBaseURL = APIClient.shared.baseURL.absoluteString
     @Published var error: APIError?
     @Published var saveSuccessMessage: String?
@@ -90,11 +89,6 @@ final class SettingsViewModel: ObservableObject {
             format: L10n.text("settings.notifications_saved_active"),
             enabledItems.joined(separator: ", ")
         )
-    }
-
-    func updateDemoMode(_ enabled: Bool) {
-        AppConstants.isDemoMode = enabled
-        isDemoMode = enabled
     }
 
     func logout() async {

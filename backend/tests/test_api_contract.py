@@ -43,6 +43,20 @@ def test_staff_dashboard_contract() -> None:
         assert body["updated_at"].endswith("Z")
 
 
+def test_patient_daily_tip_contract() -> None:
+    with TestClient(app) as client:
+        headers = auth_headers(client, "patient")
+        first = client.get("/api/v1/me/daily_tip", headers=headers)
+        assert first.status_code == 200, first.text
+        body = first.json()
+        assert body["tip_text"]
+        assert body["tip_date"]
+        assert body["source_scope"] in {"smartbot", "mock_fallback"}
+        second = client.get("/api/v1/me/daily_tip", headers=headers)
+        assert second.status_code == 200, second.text
+        assert second.json()["tip_text"] == body["tip_text"]
+
+
 def test_patient_checkin_submit_and_poll() -> None:
     with TestClient(app) as client:
         headers = auth_headers(client, "patient")
@@ -299,7 +313,71 @@ def test_hotline_text_classifies_risk() -> None:
         assert body["needs_staff_review"] is True
         assert body["reasons"]
         assert body["transcript"]
-        assert body["answer_text"] is None
+        assert body["answer_text"]
+
+
+def test_hotline_text_cerebral_hemorrhage_is_intervention() -> None:
+    with TestClient(app) as client:
+        headers = auth_headers(client, "patient")
+        response = client.post(
+            "/api/v1/hotline/questions",
+            headers=headers,
+            json={
+                "mode": "text",
+                "text": "Tôi bị xuất huyết não",
+                "client_request_id": "test-hotline-hemorrhage",
+            },
+        )
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert body["risk_level"] == "intervention"
+        assert body["needs_staff_review"] is True
+
+
+def test_hotline_text_stab_wound_is_intervention() -> None:
+    with TestClient(app) as client:
+        headers = auth_headers(client, "patient")
+        response = client.post(
+            "/api/v1/hotline/questions",
+            headers=headers,
+            json={
+                "mode": "text",
+                "text": "Cây đâm lủng giác mác",
+                "client_request_id": "test-hotline-stab",
+            },
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["risk_level"] == "intervention"
+
+
+def test_hotline_voice_returns_existing_question_without_idempotency_row() -> None:
+    with TestClient(app) as client:
+        headers = auth_headers(client, "patient")
+        audio = b"hotline-voice-existing-row"
+        first = client.post(
+            "/api/v1/hotline/questions",
+            headers=headers,
+            data={
+                "mode": "voice",
+                "client_request_id": "test-hotline-voice-existing-row",
+                "recorded_duration_seconds": "2",
+            },
+            files={"audio_file": ("question.m4a", audio, "audio/m4a")},
+        )
+        assert first.status_code == 202, first.text
+        first_body = first.json()
+        second = client.post(
+            "/api/v1/hotline/questions",
+            headers=headers,
+            data={
+                "mode": "voice",
+                "client_request_id": "test-hotline-voice-existing-row",
+                "recorded_duration_seconds": "2",
+            },
+            files={"audio_file": ("question.m4a", audio + b"-changed", "audio/m4a")},
+        )
+        assert second.status_code == 202, second.text
+        assert second.json()["question_id"] == first_body["question_id"]
 
 
 def test_hotline_voice_replays_same_client_request_id() -> None:
@@ -352,7 +430,7 @@ def test_hotline_voice_transcribes_and_classifies() -> None:
         status = client.get(f"/api/v1/hotline/questions/{question_id}", headers=headers)
         assert status.status_code == 200, status.text
         body = status.json()
-        assert body["status"] == "completed"
+        assert body["status"] in {"completed", "needs_review"}
         assert body["transcript"]
         assert body["risk_level"] in {"normal", "attention", "intervention"}
         assert body.get("reasons") is not None

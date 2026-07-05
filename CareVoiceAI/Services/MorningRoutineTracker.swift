@@ -5,20 +5,18 @@ import SwiftUI
 final class MorningRoutineTracker: ObservableObject {
     static let shared = MorningRoutineTracker()
 
-    static let totalSteps = 3
+    static let totalSteps = 2
 
-    @AppStorage("morning_checkin_day") private var checkinDay = ""
     @AppStorage("morning_medication_day") private var medicationDay = ""
-    @AppStorage("morning_face_day") private var faceDay = ""
+    @AppStorage("morning_daily_tip_day") private var dailyTipDay = ""
 
     private init() {}
 
-    var checkinCompleted: Bool { checkinDay == todayKey }
     var medicationCompleted: Bool { medicationDay == todayKey }
-    var faceVerifyCompleted: Bool { faceDay == todayKey }
+    var dailyTipCompleted: Bool { dailyTipDay == todayKey }
 
     var completedSteps: Int {
-        [checkinCompleted, medicationCompleted, faceVerifyCompleted].filter { $0 }.count
+        [medicationCompleted, dailyTipCompleted].filter { $0 }.count
     }
 
     var progressFraction: Double {
@@ -27,26 +25,20 @@ final class MorningRoutineTracker: ObservableObject {
 
     var isMorningComplete: Bool { completedSteps == Self.totalSteps }
 
-    func markCheckinDone() {
-        checkinDay = todayKey
-        objectWillChange.send()
-    }
-
     func markMedicationDone() {
         medicationDay = todayKey
         objectWillChange.send()
     }
 
-    func markFaceVerifyDone() {
-        faceDay = todayKey
+    func markDailyTipDone() {
+        dailyTipDay = todayKey
         objectWillChange.send()
     }
 
     func resetIfNewDay() {
-        guard checkinDay != todayKey || medicationDay != todayKey || faceDay != todayKey else { return }
-        if checkinDay != todayKey { checkinDay = "" }
+        guard medicationDay != todayKey || dailyTipDay != todayKey else { return }
         if medicationDay != todayKey { medicationDay = "" }
-        if faceDay != todayKey { faceDay = "" }
+        if dailyTipDay != todayKey { dailyTipDay = "" }
         objectWillChange.send()
     }
 

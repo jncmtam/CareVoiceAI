@@ -149,7 +149,17 @@ class DocumentService:
             draft_follow_up=result.get("draft_follow_up"),
             instructions=result.get("instructions"),
             warnings=result.get("warnings"),
+            error_code=job.error_code,
+            error_message=job.error_message,
+            display_message=self._ocr_display_message(job),
         )
+
+    def _ocr_display_message(self, job: Job) -> str | None:
+        if job.status == JobStatus.failed:
+            return job.error_message or "Không đọc được đơn thuốc. Vui lòng thử lại hoặc nhập tay."
+        if job.status in {JobStatus.processing, JobStatus.queued, JobStatus.uploading}:
+            return "Hệ thống đang đọc đơn thuốc..."
+        return None
 
     async def cancel_job(self, job_id: str) -> CancelJobResponse:
         job = await self.session.get(Job, job_id)

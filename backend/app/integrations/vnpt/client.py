@@ -92,12 +92,19 @@ class VNPTHttpClient:
                 if response.status_code >= 500:
                     raise APIError("vendor_unavailable", "Dịch vụ VNPT tạm thời không khả dụng.", 503)
                 if response.status_code >= 400:
+                    logger.warning(
+                        "vnpt_request_failed",
+                        method=method,
+                        path=path,
+                        status=response.status_code,
+                    )
                     raise APIError(
                         "vendor_unavailable",
                         f"VNPT trả lỗi HTTP {response.status_code}.",
                         503,
                         {"body": response.text[:500]},
                     )
+                logger.info("vnpt_request_ok", method=method, path=path, status=response.status_code)
                 data = response.json()
                 if not isinstance(data, dict):
                     return {"object": data}

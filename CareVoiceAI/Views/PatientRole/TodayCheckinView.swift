@@ -283,6 +283,9 @@ struct TodayCheckinView: View {
 
     private func completedResultCard(_ result: CheckinJobResponse) -> some View {
         VStack(alignment: .leading, spacing: CVSpacing.sm) {
+            Text(result.displayMessage ?? L10n.text("patient.checkin.completed_badge"))
+                .font(.headline)
+                .foregroundColor(.primary)
             RiskBadge(level: result.risk?.level)
             if let transcript = result.transcript, !transcript.isEmpty {
                 Text(transcript)

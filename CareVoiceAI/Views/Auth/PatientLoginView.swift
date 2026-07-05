@@ -64,9 +64,6 @@ struct PatientLoginView: View {
             ) {
                 Task { await viewModel.loginWithPassword() }
             }
-            SecondaryButton(title: L10n.text("auth.demo_login"), systemImage: "play.circle.fill") {
-                Task { await viewModel.submitQuickLogin() }
-            }
         }
         .cvGlossyCard()
         .cvStaggeredAppear(index: 2, isVisible: appeared)

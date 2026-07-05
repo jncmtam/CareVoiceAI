@@ -230,7 +230,7 @@ struct MorningProgressCard: View {
         VStack(alignment: .leading, spacing: CVSpacing.md) {
             SectionHeaderView(
                 title: L10n.text("patient.morning.title"),
-                systemImage: "sun.max.fill", subtitle: String(format: L10n.text("patient.morning.progress"), tracker.completedSteps, MorningRoutineTracker.totalSteps),
+                systemImage: "checklist", subtitle: String(format: L10n.text("patient.morning.progress"), tracker.completedSteps, MorningRoutineTracker.totalSteps),
                 tint: .riskAttention
             )
             ProgressView(value: tracker.progressFraction)
@@ -238,24 +238,17 @@ struct MorningProgressCard: View {
             VStack(spacing: CVSpacing.sm) {
                 MorningStepLink(
                     step: 1,
-                    title: L10n.todayCheckin,
-                    systemImage: "heart.text.square.fill",
-                    isDone: tracker.checkinCompleted,
-                    destination: AnyView(TodayCheckinView())
-                )
-                MorningStepLink(
-                    step: 2,
                     title: L10n.medications,
                     systemImage: "pills.fill",
                     isDone: tracker.medicationCompleted,
                     destination: AnyView(MedicationListView())
                 )
                 MorningStepLink(
-                    step: 3,
-                    title: L10n.text("face.title_short"),
-                    systemImage: "faceid",
-                    isDone: tracker.faceVerifyCompleted,
-                    destination: AnyView(FaceVerificationPlaceholderView())
+                    step: 2,
+                    title: L10n.text("patient.daily_tip.title_short"),
+                    systemImage: "lightbulb.fill",
+                    isDone: tracker.dailyTipCompleted,
+                    destination: AnyView(DailyTipView())
                 )
             }
             if tracker.isMorningComplete {

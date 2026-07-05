@@ -43,7 +43,7 @@ Nhóm bảng chính:
 - `users`, `refresh_tokens`, `otp_sessions`, `patient_users`
 - `patients`, `medications`, `appointments`, `medical_documents`
 - `jobs`, `checkins`, `checkin_responses`, `hotline_questions`
-- `staff_alerts`, `devices`, `face_verification_sessions`
+- `staff_alerts`, `devices`
 - `idempotency_keys`
 
 Chi tiết đã chuẩn bị cho production:
@@ -66,15 +66,17 @@ Chi tiết đã chuẩn bị cho production:
 - Bảng điều khiển nhân viên: `/staff/dashboard/overview`, `/staff/patients/priority`, `/staff/patients/{id}/timeline`, cập nhật handling
 - Hotline: `/hotline/questions`, `/hotline/questions/{id}`, `/hotline/questions`
 - Thiết bị: `/devices/register`, `/devices/{id}`, `GET/PATCH /devices/{id}/notification_preferences`
-- eKYC tạm thời: `/identity/face_verification/sessions`, endpoint xem trạng thái
 
 ## Chạy Local
 
 ```bash
+# Từ root repo (khuyến nghị)
+make setup && make backend
+
+# Hoặc thủ công
 cd backend
-python3.12 -m venv .venv
-.venv/bin/python -m pip install -e ".[dev]"
-.venv/bin/uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+cp .env.example .env   # chỉnh VENDOR_MOCK_MODE=true cho demo nhanh
+./scripts/start_local.sh
 ```
 
 OpenAPI: `http://127.0.0.1:8000/api/v1/docs`
@@ -103,7 +105,8 @@ Compose chạy API + PostgreSQL + Redis. Bản local vẫn dùng rate limit/job 
 
 - Client phải gửi `client_request_id` khi upload tài liệu, gửi check-in và hỏi hotline.
 - Cùng body + cùng `client_request_id` trả lại response cũ.
-- Cùng `client_request_id` nhưng khác body trả `409 conflict`.
+- Hotline voice: cùng `client_request_id` (kể cả audio hash hơi khác do file finalize) trả lại câu hỏi đã tạo.
+- Check-in/OCR: cùng `client_request_id` nhưng khác body có thể trả `409 conflict`.
 - Backend lưu response tức thời trong `idempotency_keys`.
 - Job polling có thể retry an toàn và giữ terminal state tới khi hết retention.
 
@@ -121,9 +124,12 @@ Compose chạy API + PostgreSQL + Redis. Bản local vẫn dùng rate limit/job 
 ## Kiểm Thử
 
 ```bash
-cd backend
-.venv/bin/python -m pytest -q
+make test                    # pytest
+make smoke                   # smoke test (API phải đang chạy)
+make demo-check              # pytest + smoke + patient-flow × 3
 ```
+
+Chi tiết checklist: [TESTING.md](../TESTING.md)
 
 Test hiện kiểm tra auth/dashboard, check-in submit/poll (+ SMS người nhà), OCR upload/poll/confirm (kể cả docx), hotline STT/SmartBot, đăng ký local notification, envelope lỗi, storage limits (`413`/`415`), background jobs và STT parser VNPT.
 

@@ -9,6 +9,7 @@ from app.models import (
     Job,
     Patient,
     StaffAlert,
+    StaffNotification,
     User,
 )
 from app.models.enums import HandlingStatus, JobStatus, JobType, RiskLevel, TimelineEntryType
@@ -21,6 +22,10 @@ from app.schemas.staff import (
     HandlingUpdateResponse,
     PatientTimelineResponse,
     PriorityPatientListResponse,
+    StaffNotificationItem,
+    StaffNotificationListResponse,
+    StaffNotificationMarkAllReadResponse,
+    StaffNotificationReadResponse,
     TimelineEntry,
     TimelinePatientHeader,
 )
@@ -364,6 +369,98 @@ class StaffService:
     @staticmethod
     def _analysis_hints(transcript: str | None) -> list[str] | None:
         return analysis_hints_from_transcript(transcript)
+
+    async def notifications(
+        self,
+        *,
+        principal: Principal,
+        page: int,
+        per_page: int,
+        unread_only: bool = False,
+    ) -> StaffNotificationListResponse:
+        self._require_staff(principal)
+        page = max(page, 1)
+        per_page = min(max(per_page, 1), 100)
+        filters = [StaffNotification.deleted_at.is_(None)]
+        if unread_only:
+            filters.append(StaffNotification.unread.is_(True))
+
+        count_stmt = select(func.count(StaffNotification.id)).where(*filters)
+        total = int((await self.session.execute(count_stmt)).scalar_one())
+
+        unread_stmt = select(func.count(StaffNotification.id)).where(
+            StaffNotification.deleted_at.is_(None),
+            StaffNotification.unread.is_(True),
+        )
+        unread_count = int((await self.session.execute(unread_stmt)).scalar_one())
+
+        result = await self.session.execute(
+            select(StaffNotification, Patient)
+            .join(Patient, Patient.id == StaffNotification.patient_id)
+            .where(*filters)
+            .order_by(StaffNotification.created_at.desc())
+            .offset((page - 1) * per_page)
+            .limit(per_page)
+        )
+        items = [
+            StaffNotificationItem(
+                id=notification.id,
+                patient_id=notification.patient_id,
+                patient_name=patient.full_name,
+                patient_code=patient.patient_code,
+                notification_type=notification.notification_type,
+                previous_risk_level=notification.previous_risk_level,
+                new_risk_level=notification.new_risk_level,
+                source_type=notification.source_type,
+                source_id=notification.source_id,
+                title=notification.title,
+                message=notification.message,
+                unread=notification.unread,
+                created_at=notification.created_at,
+                read_at=notification.read_at,
+            )
+            for notification, patient in result.all()
+        ]
+        return StaffNotificationListResponse(
+            items=items,
+            unread_count=unread_count,
+            page=page,
+            per_page=per_page,
+            total=total,
+            has_next=page * per_page < total,
+        )
+
+    async def mark_notification_read(
+        self, *, principal: Principal, notification_id: str
+    ) -> StaffNotificationReadResponse:
+        self._require_staff(principal)
+        notification = await self.session.get(StaffNotification, notification_id)
+        if not notification or notification.deleted_at:
+            raise APIError("not_found", "Không tìm thấy thông báo.", 404)
+        notification.unread = False
+        notification.read_at = now_utc()
+        return StaffNotificationReadResponse(
+            id=notification.id,
+            unread=notification.unread,
+            read_at=notification.read_at,
+        )
+
+    async def mark_all_notifications_read(
+        self, *, principal: Principal
+    ) -> StaffNotificationMarkAllReadResponse:
+        self._require_staff(principal)
+        result = await self.session.execute(
+            select(StaffNotification).where(
+                StaffNotification.deleted_at.is_(None),
+                StaffNotification.unread.is_(True),
+            )
+        )
+        notifications = list(result.scalars())
+        timestamp = now_utc()
+        for notification in notifications:
+            notification.unread = False
+            notification.read_at = timestamp
+        return StaffNotificationMarkAllReadResponse(updated_count=len(notifications))
 
     def _require_staff(self, principal: Principal) -> None:
         if not principal.is_staff:

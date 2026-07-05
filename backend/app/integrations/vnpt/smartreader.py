@@ -9,6 +9,7 @@ from app.integrations.vnpt.auth import VNPTAuthService
 from app.integrations.vnpt.client import VNPTHttpClient, extract_object, is_success_message
 from app.integrations.vnpt.parsers.prescription import parse_ocr_payload
 from app.integrations.vnpt.types import OcrResult
+from app.utils.document_text import extract_document_text
 
 
 class SmartReaderClient:
@@ -28,6 +29,15 @@ class SmartReaderClient:
         content_type: str,
         mode: str,
     ) -> tuple[OcrResult, str | None]:
+        if self._is_word_document(filename, content_type):
+            raw_text = extract_document_text(
+                file_bytes=file_bytes,
+                filename=filename,
+                content_type=content_type,
+            )
+            if raw_text.strip():
+                return parse_ocr_payload(raw_text=raw_text), None
+
         access_token = await self.auth.access_token("smartreader")
         client_session = self._new_client_session("ocr")
         upload = await self.http.upload_multipart(
@@ -40,6 +50,7 @@ class SmartReaderClient:
             filename=filename,
             content=file_bytes,
             content_type=content_type,
+            extra_fields={"title": filename or "carevoice-document"},
         )
         uploaded = extract_object(upload)
         file_hash = uploaded.get("hash") or uploaded.get("file_hash") or uploaded.get("file_id")
@@ -122,3 +133,8 @@ class SmartReaderClient:
     def _new_client_session(self, prefix: str) -> str:
         base = self.settings.vnpt_client_session.strip() or "carevoice"
         return f"{base}-{prefix}-{uuid.uuid4().hex}"
+
+    def _is_word_document(self, filename: str, content_type: str) -> bool:
+        name = (filename or "").lower()
+        ctype = (content_type or "").lower()
+        return name.endswith((".docx", ".doc")) or "wordprocessingml" in ctype or ctype == "application/msword"

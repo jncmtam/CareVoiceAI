@@ -80,3 +80,39 @@ class HandlingUpdateResponse(APIModel):
     handled_at: datetime | None = None
     note: str | None = None
 
+
+class StaffNotificationItem(APIModel):
+    id: str
+    patient_id: str
+    patient_name: str
+    patient_code: str | None = None
+    notification_type: str
+    previous_risk_level: RiskLevel | None = None
+    new_risk_level: RiskLevel
+    source_type: str | None = None
+    source_id: str | None = None
+    title: str
+    message: str
+    unread: bool
+    created_at: datetime
+    read_at: datetime | None = None
+
+
+class StaffNotificationListResponse(APIModel):
+    items: list[StaffNotificationItem]
+    unread_count: int
+    page: int
+    per_page: int
+    total: int
+    has_next: bool
+
+
+class StaffNotificationReadResponse(APIModel):
+    id: str
+    unread: bool
+    read_at: datetime | None = None
+
+
+class StaffNotificationMarkAllReadResponse(APIModel):
+    updated_count: int
+

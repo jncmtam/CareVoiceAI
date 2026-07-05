@@ -10,13 +10,24 @@ Hướng dẫn chạy CareVoice AI cho demo hackathon với backend thật.
 
 ## Backend
 
+### Tạo `.env`
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+- Demo nhanh / CI: `VENDOR_MOCK_MODE=true` (mặc định trong `.env.example`)
+- Pitch VNPT thật: `VENDOR_MOCK_MODE=false` + điền token VNPT
+
+**Không commit** file `.env` thật.
+
 ### Cách 1 — Python trực tiếp (khuyến nghị demo / hackathon)
 
 **Không cần Docker.** Dùng SQLite, tài khoản `nurse`/`patient` vẫn đủ.
 
 ```bash
-cd backend
-./scripts/start_local.sh
+make setup    # hoặc: cd backend && ./scripts/start_local.sh
+make backend
 ```
 
 Nếu port 8000 đang bị Docker chiếm:

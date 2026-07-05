@@ -29,17 +29,16 @@ Bật trong **Cài đặt** → dữ liệu in-memory qua `DemoAPIService`. Dùn
 
 | Tab | Màn hình | Mục đích |
 |-----|----------|----------|
-| Trang chủ | `PatientHomeView` | Buổi sáng 3 bước, preview check-in/thuốc/tái khám |
+| Trang chủ | `PatientHomeView` | Buổi sáng 2 bước, preview check-in/thuốc/tái khám |
 | Lịch sử | `CheckinHistoryView` | Các lần check-in trước |
 | Thuốc | `MedicationListView` | Danh sách thuốc, nhắc uống, adherence |
 | Hotline | `HotlineView` | Hỏi đáp AI (chữ + giọng) |
 | Cài đặt | `SettingsView` | Demo mode, backend, thông báo |
 
-### Buổi sáng 3 bước
+### Buổi sáng 2 bước
 
-1. Check-in hôm nay  
-2. Uống thuốc (xác nhận)  
-3. Xác thực khuôn mặt (khi tái khám)
+1. Uống thuốc (xác nhận)  
+2. Lời khuyên sức khỏe hôm nay
 
 Mở app buổi sáng → giọng chào + hướng dẫn (`SpeechReminderService`).
 
@@ -74,10 +73,6 @@ Mở app buổi sáng → giọng chào + hướng dẫn (`SpeechReminderService
 | Offline | Queue giọng nói; xóa bản ghi sau khi lưu offline thành công |
 
 Từ khóa nguy hiểm (`đau ngực`, `khó thở`…) → `intervention` + alert điều dưỡng.
-
-### Xác thực khuôn mặt
-
-`FaceVerificationPlaceholderView` + camera — backend mock `verified` sau upload (chưa eKYC VNPT).
 
 ---
 
@@ -165,7 +160,6 @@ Chi tiết: [FREE_NOTIFICATIONS.md](FREE_NOTIFICATIONS.md)
 | Hạng mục | Ghi chú |
 |----------|---------|
 | SMS gateway thật | Trigger + log đã có |
-| eKYC VNPT | Face verify mock |
 | APNs server push | Local notification đủ demo |
 | Alembic / S3 / Redis queue | README backend |
 

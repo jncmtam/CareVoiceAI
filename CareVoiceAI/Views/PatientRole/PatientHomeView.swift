@@ -9,11 +9,6 @@ struct PatientHomeView: View {
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: CVSpacing.lg) {
-                if AppConstants.isDemoMode {
-                    DemoModeBanner()
-                        .cvStaggeredAppear(index: 0, isVisible: appeared)
-                }
-
                 if let error = viewModel.error {
                     ErrorBannerView(message: error.userMessage) {
                         Task { await viewModel.load() }
@@ -23,12 +18,10 @@ struct PatientHomeView: View {
 
                 MorningProgressCard(tracker: morningTracker)
                     .cvStaggeredAppear(index: 1, isVisible: appeared)
-                checkinCard
-                    .cvStaggeredAppear(index: 2, isVisible: appeared)
                 medicationPreview
-                    .cvStaggeredAppear(index: 3, isVisible: appeared)
+                    .cvStaggeredAppear(index: 2, isVisible: appeared)
                 appointmentPreview
-                    .cvStaggeredAppear(index: 4, isVisible: appeared)
+                    .cvStaggeredAppear(index: 3, isVisible: appeared)
 
             }
             .padding(CVSpacing.lg)
@@ -49,70 +42,9 @@ struct PatientHomeView: View {
         }
         .onAppear {
             appeared = true
-            if !morningTracker.checkinCompleted {
+            if !morningTracker.isMorningComplete {
                 SpeechReminderService.shared.speakMorningWelcome()
             }
-        }
-    }
-
-    @ViewBuilder
-    private var checkinCard: some View {
-        switch viewModel.checkinState {
-        case .idle, .loading:
-            LoadingView(title: L10n.preparingQuestion, systemImage: "heart.text.square.fill")
-                .frame(minHeight: 220)
-                .cvGlossyCard(elevation: .hero)
-        case .failed(let error):
-            ErrorBannerView(message: error.userMessage) {
-                Task { await viewModel.load() }
-            }
-        case .empty(let message):
-            EmptyStateView(title: message)
-                .frame(minHeight: 220)
-                .cvGlossyCard()
-        case .loaded(let checkin):
-            NavigationLink(destination: TodayCheckinView()) {
-                VStack(alignment: .leading, spacing: CVSpacing.lg) {
-                    HStack(alignment: .top) {
-                        CareVoiceLogo(variant: .patient, size: 52, showPulse: false)
-                        VStack(alignment: .leading, spacing: CVSpacing.xs) {
-                            Text(L10n.todayCheckin)
-                                .font(.headline)
-                            Text(L10n.text("patient.checkin.home_subtitle"))
-                                .font(.footnote)
-                                .foregroundColor(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                        Spacer()
-                        StickerIcon(
-                            systemImage: morningTracker.checkinCompleted ? "checkmark.seal.fill" : "waveform.circle.fill",
-                            size: 36,
-                            iconSize: 16,
-                            tint: morningTracker.checkinCompleted ? .riskNormal : .careVoicePrimary
-                        )
-                    }
-
-                    CheckinFlowStepBar(
-                        activeStep: .listen,
-                        isListening: false,
-                        showsConfirmStep: false
-                    )
-
-                    Text(checkin.questionText)
-                        .font(CVFont.patientBody)
-                        .foregroundColor(.primary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .lineLimit(3)
-
-                    Label(L10n.continueText, systemImage: "arrow.right.circle.fill")
-                        .font(CVFont.patientAction)
-                        .foregroundColor(.careVoicePrimary)
-                        .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
-                }
-                .padding(CVSpacing.md)
-            }
-            .buttonStyle(PlainButtonStyle())
-            .cvGlossyCard(elevation: .hero)
         }
     }
 

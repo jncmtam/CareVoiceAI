@@ -56,6 +56,10 @@ final class SpeechReminderService: NSObject, ObservableObject, AVSpeechSynthesiz
         speak(L10n.text("patient.morning.voice_welcome"))
     }
 
+    func speakDailyTip(_ text: String) {
+        speak(text)
+    }
+
     func speakStaffCriticalAlert(patientName: String) {
         speak(String(format: L10n.text("staff.critical.voice_alert"), patientName))
     }

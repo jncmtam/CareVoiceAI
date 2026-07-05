@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Chạy backend KHÔNG cần Docker — SQLite local, phù hợp demo + iOS.
+# Chạy backend KHÔNG cần Docker — SQLite local.
 
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -20,19 +20,12 @@ fi
 echo "→ Cài dependencies..."
 .venv/bin/python -m pip install -q -e ".[dev]"
 
-# Dùng SQLite, mock VNPT — không cần Postgres/Redis
 export DATABASE_URL="${DATABASE_URL:-sqlite+aiosqlite:///./carevoice.db}"
 export AUTO_CREATE_TABLES="${AUTO_CREATE_TABLES:-true}"
 export SEED_DEMO_DATA="${SEED_DEMO_DATA:-true}"
 export VENDOR_MOCK_MODE="${VENDOR_MOCK_MODE:-true}"
 export MEDIA_BASE_URL="${MEDIA_BASE_URL:-http://127.0.0.1:${PORT}}"
-
-if [[ -f .env ]]; then
-  set -a
-  # shellcheck disable=SC1091
-  source .env
-  set +a
-fi
+# .env được đọc bởi pydantic-settings khi uvicorn khởi động app (không source bash — tránh lỗi giá trị có khoảng trắng).
 
 if lsof -nP -iTCP:"${PORT}" -sTCP:LISTEN >/dev/null 2>&1; then
   echo "⚠️  Port ${PORT} đang được dùng (có thể Docker). Dừng Docker trước:" >&2

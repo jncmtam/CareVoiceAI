@@ -137,7 +137,7 @@ def build():
     card(s, Inches(0.55), Inches(1.45), Inches(4.2), Inches(3.55),
          "Vòng 1 — Đề xuất",
          ["Voice-first outbound: AI chủ động hỏi thăm mỗi sáng",
-          "Tích hợp VNPT: SmartReader, SmartVoice, SmartBot, eKYC",
+          "Tích hợp VNPT: SmartReader, SmartVoice, SmartBot",
           "Mô hình B2B SaaS — phòng khám nội tiết & tim mạch",
           "Pilot TP.HCM & Hà Nội · TAM/SAM/SOM đã xác định"],
          accent=SAGE)
@@ -145,7 +145,7 @@ def build():
          "Vòng 2 — MVP đã code",
          ["iOS native SwiftUI (79 file) + FastAPI backend",
           "Dashboard điều dưỡng ưu tiên + gọi 1 chạm",
-          "Buổi sáng 3 bước: check-in → thuốc → xác thực",
+          "Buổi sáng 2 bước: thuốc → lời khuyên",
           "20 pytest · Docker · offline queue · job runner"],
          accent=MINT)
 
@@ -206,7 +206,7 @@ def build():
     layers = [
         ("iOS App", "SwiftUI · Demo/Backend mode\nOffline queue · Local notifications", TEAL),
         ("CareVoice API", "FastAPI · JWT · RBAC · Job runner\nPostgreSQL/SQLite · Redis", SEAFOAM),
-        ("VNPT Gateway", "SmartReader · SmartVoice STT/TTS\nSmartBot · eKYC mock/live", MINT),
+        ("VNPT Gateway", "SmartReader · SmartVoice STT/TTS\nSmartBot mock/live", MINT),
     ]
     for i, (title, body, accent) in enumerate(layers):
         y = Inches(1.45 + i * 1.15)
@@ -222,12 +222,12 @@ def build():
 
     # ── 6. Tính năng BN ────────────────────────────────────────
     s = prs.slides.add_slide(prs.slide_layouts[6])
-    slide_header(s, "Tính năng đã triển khai — Bệnh nhân", "5 tab · Voice-first · Buổi sáng 3 bước")
+    slide_header(s, "Tính năng đã triển khai — Bệnh nhân", "5 tab · Voice-first · Buổi sáng 2 bước")
     features = [
         ("Check-in hàng ngày", "TTS câu hỏi · nút Có/Không/Bình thường\nGhi âm STT · polling kết quả · offline queue"),
         ("Thuốc & tuân thủ", "Nhắc giọng theo khung giờ · xác nhận buổi\nPOST adherence · điều dưỡng thấy liều bỏ lỡ"),
         ("Hotline AI 24/7", "Hỏi bằng chữ/giọng · guardrail thuốc\nneeds_staff_review khi cần người thật"),
-        ("Xác thực tái khám", "Camera capture · face verify session\nTick bước 3 buổi sáng"),
+        ("Lời khuyên hôm nay", "Mẹo sức khỏe theo chẩn đoán\nTick bước 2 buổi sáng"),
     ]
     for i, (t, b) in enumerate(features):
         col, row = i % 2, i // 2
@@ -272,7 +272,6 @@ def build():
         ["SmartVoice STT", "Nhận giọng check-in & hotline", "POST /checkins/{id}/responses"],
         ["SmartVoice TTS", "Đọc câu hỏi check-in", "GET /checkins/{id}/audio"],
         ["SmartBot / Tóm tắt", "Phân loại nguy cơ + hotline", "GET /checkin_jobs/{job_id}"],
-        ["eKYC / vnFace", "Xác thực khuôn mặt tái khám", "POST /identity/face_verification"],
     ]
     tbl = s.shapes.add_table(len(rows), 3, Inches(0.55), Inches(1.4), Inches(8.85), Inches(3.5)).table
     col_w = [Inches(2.2), Inches(3.3), Inches(3.35)]
@@ -413,7 +412,7 @@ def build():
          "Mô hình doanh thu",
          ["SaaS theo số BN active/tháng",
           "Gói Professional: dashboard + OCR + voice",
-          "Add-on: SMS gateway, eKYC, tích hợp HIS"],
+          "Add-on: SMS gateway, tích hợp HIS"],
          accent=TEAL)
 
     # ── 15. Pricing & unit economics ───────────────────────────
@@ -470,7 +469,7 @@ def build():
     roadmap = [
         ("Q3/26", "MVP Vòng 2", "iOS + API + VNPT mock/live\n20 test · Docker"),
         ("Q4/26", "Pilot 1", "1 PK · 150 BN · SMS thật\nMetrics dashboard"),
-        ("Q1/27", "Scale pilot", "3 PK · eKYC live\nHIS integration POC"),
+        ("Q1/27", "Scale pilot", "3 PK · HIS integration POC\nMetrics & reporting"),
         ("Q2/27", "Commercial", "Pricing launch · 500 BN\nAPNs push · Redis queue"),
     ]
     add_rect(s, Inches(0.55), Inches(2.0), Inches(8.85), Inches(0.08), MINT)

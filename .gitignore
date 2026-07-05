@@ -7,10 +7,16 @@ backend/storage/
 backend/test/tts/generated/
 backend/fixtures/
 backend/.pytest_cache/
+backend/.ruff_cache/
 backend/__pycache__/
 backend/**/__pycache__/
 backend/*.egg-info/
 
 # macOS/Xcode local noise
 .DS_Store
+*.xcuserstate
 xcuserdata/
+UserInterfaceState.xcuserstate
+
+# Local test artifacts
+/tmp/cv_smoke_*

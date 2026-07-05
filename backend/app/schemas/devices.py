@@ -48,30 +48,3 @@ class NotificationPreferencesUpdateRequest(NotificationPreferences):
 class NotificationPreferencesResponse(APIModel):
     device_id: str
     preferences: NotificationPreferences
-
-
-class FaceVerificationSessionRequest(APIModel):
-    patient_id: str
-    purpose: str = "follow_up_visit"
-
-
-class FaceVerificationSessionResponse(APIModel):
-    session_id: str
-    status: str
-    upload_url: str | None = None
-    expires_at: datetime | None = None
-
-
-class FaceVerificationStatusResponse(APIModel):
-    session_id: str
-    status: str
-    verified_at: datetime | None = None
-    needs_staff_review: bool
-
-
-class FaceVerificationUploadResponse(APIModel):
-    session_id: str
-    status: str
-    verified_at: datetime | None = None
-    needs_staff_review: bool
-    message: str

@@ -45,6 +45,13 @@ class IdempotencyService:
         response_status: int,
         response_body: dict[str, Any],
     ) -> None:
+        existing = await self.repo.get_key(
+            scope=scope,
+            actor_id=actor_id,
+            client_request_id=client_request_id,
+        )
+        if existing:
+            return
         await self.repo.add(
             IdempotencyKey(
                 id=new_id("idem"),

@@ -115,12 +115,6 @@ Hotline bằng giọng nói dùng multipart nên phần yêu cầu do `Multipart
 - `NotificationPreferencesUpdateRequest`
 - `NotificationPreferencesResponse`
 
-## Model eKYC Tạm Thời
-
-- `FaceVerificationSessionRequest`
-- `FaceVerificationSessionResponse`
-- `FaceVerificationStatusResponse`
-
 ## Model Chỉ Dùng Local
 
 Các model này không map trực tiếp API nhưng cần cho production iOS:

@@ -4,11 +4,11 @@ from typing import Any
 
 from app.core.config import Settings
 from app.core.errors import APIError
+from app.models.enums import RiskLevel
 from app.integrations.vnpt.auth import VNPTAuthService
 from app.integrations.vnpt.client import VNPTHttpClient, extract_object
 from app.integrations.vnpt.types import HotlineAnswer
-
-_DANGER_TERMS = ("đau ngực", "khó thở", "ngất", "co giật")
+from app.services.risk_classifier import classify_transcript, merge_risk_levels
 
 
 class SmartBotClient:
@@ -57,12 +57,18 @@ class SmartBotClient:
         if not answer_text:
             return self._fallback_answer(text, has_confirmed_record)
 
+        classified_level, classified_reasons = classify_transcript(text, source="hotline")
+        risk_level = classified_level.value
+        reasons = classified_reasons
+        if needs_review and classified_level == RiskLevel.normal:
+            risk_level = "attention"
+            reasons = ["Câu hỏi cần nhân viên y tế xác nhận nếu liên quan điều trị."]
         return HotlineAnswer(
             answer_text=answer_text,
             source_scope="confirmed_medical_record" if has_confirmed_record else "smartbot",
-            needs_staff_review=needs_review,
-            risk_level="attention",
-            reasons=["Câu hỏi cần nhân viên y tế xác nhận nếu liên quan điều trị."],
+            needs_staff_review=needs_review or classified_level != RiskLevel.normal,
+            risk_level=risk_level,
+            reasons=reasons,
         )
 
     def _extract_answer_text(self, payload: dict[str, Any]) -> str:
@@ -109,14 +115,14 @@ class SmartBotClient:
         ]
 
     def _guardrail_answer(self, text: str, has_confirmed_record: bool) -> HotlineAnswer | None:
-        lower = text.lower()
-        if any(term in lower for term in _DANGER_TERMS):
+        level, reasons = classify_transcript(text, source="hotline")
+        if level == RiskLevel.intervention:
             return HotlineAnswer(
-                answer_text="Triệu chứng này cần điều dưỡng/bác sĩ xem lại. Hệ thống đã gửi cảnh báo.",
+                answer_text="Triệu chứng này cần điều dưỡng/bác sĩ xem lại ngay. Hệ thống đã gửi cảnh báo.",
                 source_scope="safety_guardrail",
                 needs_staff_review=True,
-                risk_level="intervention",
-                reasons=["Câu hỏi có dấu hiệu cảnh báo cần can thiệp"],
+                risk_level=level.value,
+                reasons=reasons[:3] or ["Câu hỏi có dấu hiệu cảnh báo cần can thiệp"],
             )
         if not has_confirmed_record:
             return HotlineAnswer(
@@ -131,10 +137,47 @@ class SmartBotClient:
             )
         return None
 
+    async def daily_health_tip(
+        self,
+        *,
+        prompt: str,
+        sender_id: str,
+        session_id: str,
+    ) -> str:
+        if not self.settings.vnpt_smartbot_bot_id:
+            return ""
+        try:
+            access_token = await self.auth.access_token("smartbot")
+            payload = await self.http.request_sse_json(
+                method="POST",
+                base_url=self.settings.vnpt_smartbot_base_url,
+                path="v1/conversation",
+                token_id=self.settings.vnpt_token_id_for("smartbot"),
+                token_key=self.settings.vnpt_token_key_for("smartbot"),
+                access_token=access_token,
+                json_body={
+                    "bot_id": self.settings.vnpt_smartbot_bot_id,
+                    "sender_id": sender_id,
+                    "text": prompt,
+                    "input_channel": self.settings.vnpt_smartbot_input_channel,
+                    "session_id": session_id,
+                    "metadata": {"button_variables": []},
+                },
+                include_mac=False,
+            )
+        except (APIError, ValueError):
+            return ""
+        answer = self._extract_answer_text(payload).strip()
+        if not answer or answer.startswith("IDG-"):
+            return ""
+        return answer[:500]
+
     def _fallback_answer(self, text: str, has_confirmed_record: bool) -> HotlineAnswer:
         guardrail = self._guardrail_answer(text, has_confirmed_record)
         if guardrail:
             return guardrail
+        level, reasons = classify_transcript(text, source="hotline")
+        fallback_level = merge_risk_levels(level, RiskLevel.attention)
         return HotlineAnswer(
             answer_text=(
                 "Bác không tự ý thay đổi liều. Bác vui lòng làm theo đơn đã xác nhận "
@@ -142,6 +185,8 @@ class SmartBotClient:
             ),
             source_scope="confirmed_medical_record",
             needs_staff_review=True,
-            risk_level="attention",
-            reasons=["Câu hỏi liên quan hướng dẫn dùng thuốc cần nhân viên y tế xác nhận."],
+            risk_level=fallback_level.value,
+            reasons=reasons[:3]
+            if level != RiskLevel.normal
+            else ["Câu hỏi liên quan hướng dẫn dùng thuốc cần nhân viên y tế xác nhận."],
         )

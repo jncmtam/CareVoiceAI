@@ -18,6 +18,7 @@ from app.schemas.ocr import (
     OCRJobResponse,
 )
 from app.schemas.adherence import MedicationAdherenceRequest, MedicationAdherenceResponse
+from app.schemas.daily_tip import DailyTipResponse
 from app.schemas.patients import (
     AppointmentListResponse,
     MedicationListResponse,
@@ -26,6 +27,7 @@ from app.schemas.patients import (
     PatientResponse,
     PatientUpdateRequest,
 )
+from app.services.daily_tip import DailyTipService
 from app.services.medication_adherence import MedicationAdherenceService
 from app.services.auth import AuthService, Principal
 from app.services.documents import DocumentService
@@ -89,6 +91,18 @@ async def my_patient(
 
         raise APIError("forbidden", "Tài khoản không gắn với bệnh nhân.", 403)
     return await PatientService(db).get_patient(principal.patient_id, include_notes=False)
+
+
+@router.get("/me/daily_tip", response_model=DailyTipResponse)
+async def my_daily_tip(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    settings: Annotated[Settings, Depends(get_settings)],
+    gateway: Annotated[VNPTGateway, Depends(vnpt_gateway_dep)],
+    principal: Annotated[Principal, Depends(get_current_principal)],
+) -> DailyTipResponse:
+    response = await DailyTipService(db, settings, gateway).today(principal)
+    await db.commit()
+    return response
 
 
 @router.get("/patients/{patient_id}/medications", response_model=MedicationListResponse)

@@ -1,0 +1,58 @@
+{
+  "raw_text": "Mã hồ sơ: VC-2026-000004\nBệnh nhân: Phạm Thị Hoa\nNgày sinh: 02/05/1952\nGiới tính: Nữ\nSĐT: 0934567890\nĐịa chỉ: Bình Thạnh, TP.HCM\nChẩn đoán: Loãng xương, Viêm khớp dạng thấp\n\nBác sĩ: BS. Trần Quốc\nKhoa: Cơ xương khớp\nNgày kê đơn: 05/07/2026\n\nĐƠN THUỐC:\n1. Calcium 500mg — 1 viên 2 lần/ngày (sáng, tối), uống sau ăn.\n2. Vitamin D3 1000IU — 1 viên mỗi sáng.\n3. Methotrexate 7.5mg — uống 1 lần/tuần vào thứ Bảy, theo dõi men gan.\n\nTái khám Cơ xương khớp sau 30 ngày.\n\nDặn dò: Tập vận động nhẹ, tránh ngã. Không tự ý ngưng Methotrexate.\n\nNgười kê đơn: BS. Trần Quốc",
+  "draft_patient": {
+    "full_name": "Phạm Thị Hoa",
+    "phone_number": "0934567890",
+    "diagnoses": [
+      "Loãng xương, Viêm khớp dạng thấp"
+    ],
+    "primary_doctor_name": "BS. Trần Quốc",
+    "confidence": 0.72
+  },
+  "draft_medications": [
+    {
+      "name": "Calcium",
+      "strength": "500mg",
+      "dosage": "1 viên",
+      "frequency": "2 lần/ngày",
+      "times_of_day": [
+        "morning",
+        "evening"
+      ],
+      "instructions": "1. Calcium 500mg — 1 viên 2 lần/ngày (sáng, tối), uống sau ăn.",
+      "confidence": 0.7
+    },
+    {
+      "name": "Vitamin D3",
+      "strength": "1000IU",
+      "dosage": "1 viên",
+      "frequency": "Mỗi sáng",
+      "times_of_day": [
+        "morning"
+      ],
+      "instructions": "2. Vitamin D3 1000IU — 1 viên mỗi sáng.",
+      "confidence": 0.7
+    },
+    {
+      "name": "Methotrexate",
+      "strength": "7.5mg",
+      "dosage": "1 viên",
+      "frequency": "Theo đơn",
+      "times_of_day": [
+        "morning"
+      ],
+      "instructions": "3. Methotrexate 7.5mg — uống 1 lần/tuần vào thứ Bảy, theo dõi men gan.",
+      "confidence": 0.7
+    }
+  ],
+  "draft_follow_up": {
+    "department": null,
+    "doctor_name": "BS. Trần Quốc",
+    "appointment_at": "2026-08-04T13:38:37.237706+00:00"
+  },
+  "instructions": "Tập vận động nhẹ, tránh ngã. Không tự ý ngưng Methotrexate.",
+  "warnings": [
+    "Điều dưỡng kiểm tra và chỉnh sửa trước khi lưu vào hồ sơ.",
+    "Có 3 dòng thuốc độ tin cậy thấp, cần kiểm tra lại."
+  ]
+}

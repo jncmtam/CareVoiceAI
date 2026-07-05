@@ -31,8 +31,9 @@ async def main() -> int:
     print(f"IDG base: {settings.vnpt_idg_base_url}")
     print()
 
-    async def _save_audio(_filename: str, data: bytes) -> str:
-        return f"{settings.media_base_url}/media/tts/{_filename}"
+    async def _save_audio(folder: str, filename: str, data: bytes, content_type: str) -> str:
+        _ = (data, content_type)
+        return f"/media/{folder}/{filename}"
 
     try:
         tts = await gateway.synthesize_question(
@@ -60,18 +61,22 @@ async def main() -> int:
         results.append(("STT fallback", f"FAIL: {exc}"))
 
     try:
+        sample_docx = ROOT / "test" / "ocr" / "don_thuoc_chu_minh_tam.docx"
+        if not sample_docx.exists():
+            raise FileNotFoundError(f"Missing OCR fixture: {sample_docx}")
         ocr, vendor_job_id = await gateway.scan_medical_document(
             file_url=None,
-            file_bytes=b"Metformin 500mg\nUong 2 lan moi ngay sau an",
-            filename="prescription.txt",
-            content_type="text/plain",
+            file_bytes=sample_docx.read_bytes(),
+            filename=sample_docx.name,
+            content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             mode="auto",
             document_type="prescription",
         )
+        patient_name = (ocr.draft_patient or {}).get("full_name", "-")
         results.append(
             (
                 "OCR",
-                f"OK status={ocr.status} meds={len(ocr.draft_medications or [])} vendor_job={vendor_job_id or '-'}",
+                f"OK patient={patient_name} meds={len(ocr.draft_medications or [])} vendor_job={vendor_job_id or '-'}",
             )
         )
     except Exception as exc:  # noqa: BLE001

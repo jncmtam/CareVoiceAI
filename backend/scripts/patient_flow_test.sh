@@ -94,22 +94,27 @@ for _ in $(seq 1 20); do
 done
 [[ "$CSTATUS" == "completed" ]] && ok "4f. Check-in job hoàn tất (risk=$(echo "$CJ" | python3 -c "import sys,json; j=json.load(sys.stdin); print(j.get('risk',{}).get('level','?'))"))" || bad "Check-in job chưa xong: $CSTATUS"
 
-# Gửi bằng giọng nói (mock audio)
+# Gửi bằng giọng nói (WAV mẫu — ổn định với VNPT live và mock)
+AUDIO_FIXTURE="$(cd "$(dirname "$0")/../test/stt" && pwd)/STT.sample.wav"
+if [[ ! -f "$AUDIO_FIXTURE" ]]; then
+  bad "Thiếu file WAV: $AUDIO_FIXTURE"
+fi
 SUBMIT_A=$(curl -s -w "\n%{http_code}" -X POST "$BASE/checkins/$CHK_ID/responses" \
   -H "$PAT_HDR" \
   -F "recorded_duration_seconds=8" \
   -F "client_recorded_at=2026-07-05T09:05:00Z" \
   -F "client_request_id=pat-flow-audio-$(date +%s)" \
-  -F "audio_file=@-;filename=answer.m4a;type=audio/m4a" <<< "fake-patient-audio")
+  -F "audio_file=@${AUDIO_FIXTURE};filename=answer.wav;type=audio/wav")
 check "4g. Gửi ghi âm check-in" "202" "$(echo "$SUBMIT_A" | tail -n1)"
 CHK_JOB2=$(echo "$SUBMIT_A" | sed '$d' | python3 -c "import sys,json; print(json.load(sys.stdin)['job_id'])")
-for _ in $(seq 1 20); do
+for _ in $(seq 1 40); do
   CJ2=$(curl -s -H "$PAT_HDR" "$BASE/checkin_jobs/$CHK_JOB2")
   CSTATUS2=$(echo "$CJ2" | python3 -c "import sys,json; print(json.load(sys.stdin)['status'])")
   [[ "$CSTATUS2" == "completed" ]] && break
-  sleep 0.15
+  [[ "$CSTATUS2" == "failed" ]] && break
+  sleep 0.5
 done
-[[ "$CSTATUS2" == "completed" ]] && ok "4h. Job ghi âm hoàn tất" || bad "Job ghi âm chưa xong"
+[[ "$CSTATUS2" == "completed" ]] && ok "4h. Job ghi âm hoàn tất" || bad "Job ghi âm chưa xong (last: $CSTATUS2)"
 
 check "4i. GET /me/checkins/history" "200" "$(curl -s -o /dev/null -w "%{http_code}" -H "$PAT_HDR" "$BASE/me/checkins/history?limit=10")"
 HIST_COUNT=$(curl -s -H "$PAT_HDR" "$BASE/me/checkins/history?limit=10" | python3 -c "import sys,json; print(len(json.load(sys.stdin).get('items',[])))")
@@ -129,18 +134,19 @@ HOT_VOICE=$(curl -s -w "\n%{http_code}" -X POST "$BASE/hotline/questions" \
   -F "mode=voice" \
   -F "recorded_duration_seconds=6" \
   -F "client_request_id=pat-hot-voice-$(date +%s)" \
-  -F "audio_file=@-;filename=hotline.m4a;type=audio/m4a" <<< "fake-hotline-audio")
+  -F "audio_file=@${AUDIO_FIXTURE};filename=hotline.wav;type=audio/wav")
 HOT_V_CODE=$(echo "$HOT_VOICE" | tail -n1)
 [[ "$HOT_V_CODE" == "200" || "$HOT_V_CODE" == "202" ]] && ok "5c. Hotline hỏi bằng giọng → HTTP $HOT_V_CODE" || bad "Hotline voice failed"
 HOT_QID=$(echo "$HOT_VOICE" | sed '$d' | python3 -c "import sys,json; print(json.load(sys.stdin)['question_id'])")
 
-for _ in $(seq 1 20); do
+for _ in $(seq 1 40); do
   HQ=$(curl -s -H "$PAT_HDR" "$BASE/hotline/questions/$HOT_QID")
   HSTATUS=$(echo "$HQ" | python3 -c "import sys,json; print(json.load(sys.stdin)['status'])")
-  [[ "$HSTATUS" == "completed" ]] && break
-  sleep 0.15
+  [[ "$HSTATUS" == "completed" || "$HSTATUS" == "needs_review" ]] && break
+  [[ "$HSTATUS" == "failed" ]] && break
+  sleep 0.5
 done
-[[ "$HSTATUS" == "completed" ]] && ok "5d. Hotline voice poll → completed" || bad "Hotline voice poll: $HSTATUS"
+[[ "$HSTATUS" == "completed" || "$HSTATUS" == "needs_review" ]] && ok "5d. Hotline voice poll → $HSTATUS" || bad "Hotline voice poll: $HSTATUS"
 
 check "5e. GET /hotline/questions (lịch sử)" "200" "$(curl -s -o /dev/null -w "%{http_code}" -H "$PAT_HDR" "$BASE/hotline/questions?limit=10")"
 HOT_HIST=$(curl -s -H "$PAT_HDR" "$BASE/hotline/questions?limit=10" | python3 -c "import sys,json; print(len(json.load(sys.stdin).get('items',[])))")
@@ -163,39 +169,30 @@ check "6d. PATCH notification_preferences" "200" "$(echo "$PREF" | tail -n1)"
 echo "$PREF" | sed '$d' | python3 -c "import sys,json; j=json.load(sys.stdin); assert j['preferences']['appointment_reminders_enabled']==False"
 ok "6e. Đã lưu tuỳ chọn nhắc tái khám = false"
 
-# --- 7. eKYC placeholder ---
-FACE=$(curl -s -w "\n%{http_code}" -X POST "$BASE/identity/face_verification/sessions" \
-  -H "$PAT_HDR" -H "Content-Type: application/json" \
-  -d "{\"patient_id\":\"$PATIENT_ID\",\"purpose\":\"follow_up_visit\"}")
-check "7a. Tạo phiên xác thực khuôn mặt" "201" "$(echo "$FACE" | tail -n1)"
-FACE_ID=$(echo "$FACE" | sed '$d' | python3 -c "import sys,json; print(json.load(sys.stdin)['session_id'])")
-check "7b. GET trạng thái face session" "200" "$(curl -s -o /dev/null -w "%{http_code}" -H "$PAT_HDR" "$BASE/identity/face_verification/sessions/$FACE_ID")"
-ok "7c. Face session id=$FACE_ID"
-
-# --- 8. Refresh token ---
+# --- 7. Refresh token ---
 REF=$(curl -s -w "\n%{http_code}" -X POST "$BASE/auth/refresh" \
   -H "Content-Type: application/json" \
   -d "{\"refresh_token\":\"$REFRESH_TOKEN\"}")
-check "8a. Refresh token" "200" "$(echo "$REF" | tail -n1)"
+check "7a. Refresh token" "200" "$(echo "$REF" | tail -n1)"
 NEW_TOKEN=$(echo "$REF" | sed '$d' | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
 NEW_REFRESH=$(echo "$REF" | sed '$d' | python3 -c "import sys,json; print(json.load(sys.stdin)['refresh_token'])")
 PAT_HDR="Authorization: Bearer $NEW_TOKEN"
-ok "8b. Nhận access token mới"
+ok "7b. Nhận access token mới"
 
-# --- 9. Kiểm tra quyền (bệnh nhân KHÔNG được vào staff) ---
-check "9a. Dashboard staff → 403" "403" "$(curl -s -o /dev/null -w "%{http_code}" -H "$PAT_HDR" "$BASE/staff/dashboard/overview")"
-check "9b. Upload OCR → 403" "403" "$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE/patients/$PATIENT_ID/documents" -H "$PAT_HDR" -F "document_type=prescription" -F "ocr_mode=auto" -F "client_request_id=deny" -F "file=@-;filename=x.pdf;type=application/pdf" <<< "x")"
-ok "9c. RBAC đúng — bệnh nhân không upload OCR"
+# --- 8. Kiểm tra quyền (bệnh nhân KHÔNG được vào staff) ---
+check "8a. Dashboard staff → 403" "403" "$(curl -s -o /dev/null -w "%{http_code}" -H "$PAT_HDR" "$BASE/staff/dashboard/overview")"
+check "8b. Upload OCR → 403" "403" "$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE/patients/$PATIENT_ID/documents" -H "$PAT_HDR" -F "document_type=prescription" -F "ocr_mode=auto" -F "client_request_id=deny" -F "file=@-;filename=x.pdf;type=application/pdf" <<< "x")"
+ok "8c. RBAC đúng — bệnh nhân không upload OCR"
 
-# --- 10. Logout & gỡ thiết bị ---
-check "10a. DELETE device" "204" "$(curl -s -o /dev/null -w "%{http_code}" -X DELETE -H "$PAT_HDR" "$BASE/devices/$DEVICE_ID")"
+# --- 9. Logout & gỡ thiết bị ---
+check "9a. DELETE device" "204" "$(curl -s -o /dev/null -w "%{http_code}" -X DELETE -H "$PAT_HDR" "$BASE/devices/$DEVICE_ID")"
 LOGOUT=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE/auth/logout" \
   -H "$PAT_HDR" -H "Content-Type: application/json" \
   -d "{\"device_id\":\"$DEVICE_ID\",\"refresh_token\":\"$NEW_REFRESH\"}")
-check "10b. Logout" "204" "$LOGOUT"
+check "9b. Logout" "204" "$LOGOUT"
 
 # JWT access vẫn hợp lệ đến hết TTL; refresh token bị revoke sau logout
-check "10c. Refresh sau logout → 401" "401" "$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE/auth/refresh" -H "Content-Type: application/json" -d "{\"refresh_token\":\"$NEW_REFRESH\"}")"
+check "9c. Refresh sau logout → 401" "401" "$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE/auth/refresh" -H "Content-Type: application/json" -d "{\"refresh_token\":\"$NEW_REFRESH\"}")"
 
 echo
 echo "=============================================="

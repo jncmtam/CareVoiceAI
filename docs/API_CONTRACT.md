@@ -888,6 +888,18 @@ Phản hồi `202` nếu giọng nói cần STT/tóm tắt:
 
 Trạng thái đặc biệt: có thể sync hoặc async. App polling `GET /hotline/questions/{question_id}` khi có `job_id`.
 
+**Idempotency (`client_request_id` bắt buộc):**
+
+| Tình huống | Kết quả |
+|------------|---------|
+| Cùng `client_request_id` + cùng nội dung (text giống hoặc audio hash giống) | Trả lại response đã lưu (`200`/`202`) |
+| Cùng `client_request_id` + audio voice hơi khác (file chưa finalize trên máy) | Trả lại câu hỏi đã tạo — **không** `409` |
+| Cùng `client_request_id` + đã có row `hotline_questions` | Trả lại `question_id` cũ — **không** `409` |
+| Thiếu `client_request_id` hoặc `audio_file` rỗng | `400 invalid_request` |
+| `409 conflict` | Chỉ khi race hiếm và không đọc lại được row cũ; message: `Câu hỏi hotline với client_request_id này đã tồn tại.` hoặc `Dữ liệu đã tồn tại hoặc vi phạm ràng buộc.` |
+
+**iOS bắt buộc:** mỗi lần ghi âm mới sinh `UUID` làm `client_request_id`; retry cùng bản ghi giữ nguyên ID đó; snapshot `audio_file` một lần trước khi upload.
+
 ### GET `/hotline/questions/{question_id}`
 
 Phản hồi `200`:
@@ -1032,45 +1044,6 @@ Phản hồi `200`:
     "appointment_reminders_enabled": true,
     "critical_staff_alerts_enabled": true
   }
-}
-```
-
-## eKYC Sau MVP
-
-### POST `/identity/face_verification/sessions`
-
-Tạo phiên xác thực khuôn mặt khi tái khám. Đây là phần tạm thời vì chưa có field VNPT eKYC chi tiết.
-
-Yêu cầu:
-
-```json
-{
-  "patient_id": "pat_001",
-  "purpose": "follow_up_visit"
-}
-```
-
-Phản hồi `201`:
-
-```json
-{
-  "session_id": "face_001",
-  "status": "not_started",
-  "upload_url": "https://api.carevoice.local/identity/face_verification/sessions/face_001/upload",
-  "expires_at": "2026-07-01T03:30:00Z"
-}
-```
-
-### GET `/identity/face_verification/sessions/{session_id}`
-
-Phản hồi `200`:
-
-```json
-{
-  "session_id": "face_001",
-  "status": "verified",
-  "verified_at": "2026-07-01T03:10:00Z",
-  "needs_staff_review": false
 }
 ```
 

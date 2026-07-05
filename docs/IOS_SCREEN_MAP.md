@@ -32,7 +32,7 @@ Tài liệu này map màn hình iOS với endpoint trong `API_CONTRACT.md`. App 
 
 ### Trang Chủ Bệnh Nhân
 
-- Buổi sáng **3 bước**: check-in, uống thuốc, xác thực khuôn mặt (`MorningRoutineTracker`).
+- Buổi sáng **2 bước**: uống thuốc, lời khuyên hôm nay (`MorningRoutineTracker`).
 - Hiển thị check-in hôm nay, thuốc gần tới giờ (deep-link từ thông báo), lịch tái khám gần nhất.
 - API: `GET /me/checkins/today`, `GET /me/medications`, `GET /me/appointments`
 - Điều hướng: Check-In, Thuốc, Tái khám, Hotline, Lịch sử.
@@ -87,12 +87,6 @@ Tài liệu này map màn hình iOS với endpoint trong `API_CONTRACT.md`. App 
 - Tuỳ chọn thông báo: `GET/PATCH /devices/{device_id}/notification_preferences`
 - Đăng xuất: `POST /auth/logout`, `DELETE /devices/{device_id}`
 - Đổi vai trò: xoá session + về chọn vai trò.
-
-### eKYC Tạm Thời
-
-- Nút "Xác thực khuôn mặt khi tái khám".
-- API: `POST /identity/face_verification/sessions`, `GET /identity/face_verification/sessions/{session_id}`
-- Không dành nhiều UI trong MVP.
 
 ## Vai Trò Nhân Viên
 

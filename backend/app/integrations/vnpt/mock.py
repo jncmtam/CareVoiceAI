@@ -1,7 +1,10 @@
 from datetime import timedelta
 
+from app.integrations.vnpt.daily_tip import daily_tip_fallback, daily_tip_prompt
 from app.integrations.vnpt.parsers.prescription import parse_ocr_payload
 from app.integrations.vnpt.types import HotlineAnswer, OcrResult, SpeechResult, TtsResult
+from app.models.enums import RiskLevel
+from app.services.risk_classifier import classify_transcript, merge_risk_levels
 from app.utils.datetime import now_utc
 from app.utils.document_text import extract_document_text
 
@@ -112,20 +115,30 @@ class MockVNPTGateway:
     async def cancel_ocr(self, vendor_job_id: str | None) -> None:
         _ = vendor_job_id
 
+    async def daily_health_tip(
+        self,
+        *,
+        diagnoses: list[str],
+        medications: list[str],
+        patient_id: str,
+        tip_date: str,
+    ) -> tuple[str, str]:
+        _ = daily_tip_prompt(diagnoses=diagnoses, medications=medications, tip_date=tip_date)
+        return daily_tip_fallback(diagnoses, patient_id, tip_date), "mock_fallback"
+
     async def _answer(self, text: str, has_confirmed_record: bool) -> HotlineAnswer:
-        lowered = text.lower()
-        danger_terms = ["đau ngực", "khó thở", "ngất", "co giật"]
-        if any(term in lowered for term in danger_terms):
-            matched = [term for term in danger_terms if term in lowered]
+        level, reasons = classify_transcript(text, source="hotline")
+        if level == RiskLevel.intervention:
             return HotlineAnswer(
-                answer_text="Triệu chứng này cần điều dưỡng/bác sĩ xem lại. Hệ thống đã gửi cảnh báo.",
+                answer_text="Triệu chứng này cần điều dưỡng/bác sĩ xem lại ngay. Hệ thống đã gửi cảnh báo.",
                 source_scope="safety_guardrail",
                 needs_staff_review=True,
-                risk_level="intervention",
-                reasons=[f"Hotline: bệnh nhân báo {matched[0]}"],
+                risk_level=level.value,
+                reasons=reasons[:3],
             )
+        lowered = text.lower()
         normal_terms = ["bình thường", "không đau", "không khó thở", "ổn"]
-        if has_confirmed_record and any(term in lowered for term in normal_terms):
+        if has_confirmed_record and level == RiskLevel.normal and any(term in lowered for term in normal_terms):
             return HotlineAnswer(
                 answer_text=(
                     "Cảm ơn bác đã cập nhật. Bác tiếp tục uống thuốc đúng giờ "
@@ -133,8 +146,8 @@ class MockVNPTGateway:
                 ),
                 source_scope="confirmed_medical_record",
                 needs_staff_review=False,
-                risk_level="normal",
-                reasons=["Không có triệu chứng cảnh báo trong câu hỏi hotline"],
+                risk_level=level.value,
+                reasons=reasons,
             )
         if not has_confirmed_record:
             return HotlineAnswer(
@@ -144,9 +157,10 @@ class MockVNPTGateway:
                 ),
                 source_scope="insufficient_confirmed_record",
                 needs_staff_review=True,
-                risk_level="attention",
-                reasons=["Chưa có hồ sơ thuốc đã xác nhận"],
+                risk_level=merge_risk_levels(level, RiskLevel.attention).value,
+                reasons=reasons[:3] or ["Chưa có hồ sơ thuốc đã xác nhận"],
             )
+        fallback_level = merge_risk_levels(level, RiskLevel.attention)
         return HotlineAnswer(
             answer_text=(
                 "Bác không tự ý thay đổi liều. Bác vui lòng làm theo đơn đã xác nhận "
@@ -154,6 +168,8 @@ class MockVNPTGateway:
             ),
             source_scope="confirmed_medical_record",
             needs_staff_review=True,
-            risk_level="attention",
-            reasons=["Câu hỏi liên quan hướng dẫn dùng thuốc cần nhân viên y tế xác nhận."],
+            risk_level=fallback_level.value,
+            reasons=reasons[:3]
+            if level != RiskLevel.normal
+            else ["Câu hỏi liên quan hướng dẫn dùng thuốc cần nhân viên y tế xác nhận."],
         )

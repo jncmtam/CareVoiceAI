@@ -1,0 +1,57 @@
+{
+  "raw_text": "Mã hồ sơ: VC-2026-000002\nBệnh nhân: Nguyễn Thị Lan\nNgày sinh: 20/03/1958\nGiới tính: Nữ\nSĐT: 0901234567\nĐịa chỉ: Quận 3, TP.HCM\nChẩn đoán: Suy tim mạn, Rối loạn lipid máu\n\nBác sĩ: BS. Phạm Hùng\nKhoa: Tim mạch\nNgày kê đơn: 05/07/2026\n\nĐƠN THUỐC:\n1. Bisoprolol 2.5mg — 1 viên mỗi sáng, uống trước ăn.\n2. Atorvastatin 20mg — 1 viên buổi tối, uống sau ăn.\n3. Furosemide 40mg — 1 viên buổi sáng, theo dõi cân nặng hàng ngày.\n\nTái khám Tim mạch sau 21 ngày.\n\nDặn dò: Hạn chế muối, theo dõi phù chân và cân nặng mỗi sáng.\nNếu khó thở tăng hoặc đau ngực — liên hệ điều dưỡng ngay.\n\nNgười kê đơn: BS. Phạm Hùng",
+  "draft_patient": {
+    "full_name": "Nguyễn Thị Lan",
+    "phone_number": "0901234567",
+    "diagnoses": [
+      "Suy tim mạn, Rối loạn lipid máu"
+    ],
+    "primary_doctor_name": "BS. Phạm Hùng",
+    "confidence": 0.72
+  },
+  "draft_medications": [
+    {
+      "name": "Bisoprolol",
+      "strength": "2.5mg",
+      "dosage": "1 viên",
+      "frequency": "Mỗi sáng",
+      "times_of_day": [
+        "morning"
+      ],
+      "instructions": "1. Bisoprolol 2.5mg — 1 viên mỗi sáng, uống trước ăn.",
+      "confidence": 0.7
+    },
+    {
+      "name": "Atorvastatin",
+      "strength": "20mg",
+      "dosage": "1 viên",
+      "frequency": "Theo đơn",
+      "times_of_day": [
+        "evening"
+      ],
+      "instructions": "2. Atorvastatin 20mg — 1 viên buổi tối, uống sau ăn.",
+      "confidence": 0.7
+    },
+    {
+      "name": "Furosemide",
+      "strength": "40mg",
+      "dosage": "1 viên",
+      "frequency": "Mỗi sáng",
+      "times_of_day": [
+        "morning"
+      ],
+      "instructions": "3. Furosemide 40mg — 1 viên buổi sáng, theo dõi cân nặng hàng ngày.",
+      "confidence": 0.7
+    }
+  ],
+  "draft_follow_up": {
+    "department": "Tim mạch",
+    "doctor_name": "BS. Phạm Hùng",
+    "appointment_at": "2026-07-26T13:38:37.217373+00:00"
+  },
+  "instructions": "Hạn chế muối, theo dõi phù chân và cân nặng mỗi sáng.",
+  "warnings": [
+    "Điều dưỡng kiểm tra và chỉnh sửa trước khi lưu vào hồ sơ.",
+    "Có 3 dòng thuốc độ tin cậy thấp, cần kiểm tra lại."
+  ]
+}

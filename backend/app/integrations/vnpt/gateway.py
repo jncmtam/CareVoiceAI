@@ -8,6 +8,7 @@ from app.integrations.vnpt.client import VNPTHttpClient
 from app.integrations.vnpt.smartbot import SmartBotClient
 from app.integrations.vnpt.smartreader import SmartReaderClient
 from app.integrations.vnpt.smartvoice import SmartVoiceClient
+from app.integrations.vnpt.daily_tip import daily_tip_fallback, daily_tip_prompt
 from app.integrations.vnpt.types import OcrResult, SpeechResult, TtsResult
 
 
@@ -53,6 +54,15 @@ class VNPTGateway(Protocol):
     ) -> dict: ...
 
     async def cancel_ocr(self, vendor_job_id: str | None) -> None: ...
+
+    async def daily_health_tip(
+        self,
+        *,
+        diagnoses: list[str],
+        medications: list[str],
+        patient_id: str,
+        tip_date: str,
+    ) -> tuple[str, str]: ...
 
 
 class LiveVNPTGateway:
@@ -145,3 +155,22 @@ class LiveVNPTGateway:
     async def cancel_ocr(self, vendor_job_id: str | None) -> None:
         if vendor_job_id:
             await self.reader.cancel_session(vendor_job_id)
+
+    async def daily_health_tip(
+        self,
+        *,
+        diagnoses: list[str],
+        medications: list[str],
+        patient_id: str,
+        tip_date: str,
+    ) -> tuple[str, str]:
+        prompt = daily_tip_prompt(diagnoses=diagnoses, medications=medications, tip_date=tip_date)
+        session_id = f"daily-tip-{patient_id}-{tip_date}"
+        answer = await self.bot.daily_health_tip(
+            prompt=prompt,
+            sender_id=patient_id,
+            session_id=session_id,
+        )
+        if answer:
+            return answer, "smartbot"
+        return daily_tip_fallback(diagnoses, patient_id, tip_date), "mock_fallback"

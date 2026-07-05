@@ -242,6 +242,107 @@ final class StaffDashboardViewModel: ObservableObject {
 }
 
 @MainActor
+final class StaffNotificationsViewModel: ObservableObject {
+    @Published var items: [StaffNotificationItem] = []
+    @Published var unreadCount = 0
+    @Published var isLoading = false
+    @Published var hasNext = false
+    @Published var error: APIError?
+
+    private let apiClient: APIClient
+    private var page = 1
+    private var lastSignature: String?
+    private var didPrimeBaseline = false
+    private var refreshTimer: Timer?
+
+    convenience init() {
+        self.init(apiClient: .shared)
+    }
+
+    init(apiClient: APIClient) {
+        self.apiClient = apiClient
+    }
+
+    deinit {
+        refreshTimer?.invalidate()
+    }
+
+    func startAutoRefresh() {
+        refreshTimer?.invalidate()
+        refreshTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                await self?.load(notifyOnNew: true)
+            }
+        }
+    }
+
+    func stopAutoRefresh() {
+        refreshTimer?.invalidate()
+        refreshTimer = nil
+    }
+
+    func load(reset: Bool = true, notifyOnNew: Bool = false) async {
+        if reset {
+            page = 1
+            isLoading = true
+        }
+        error = nil
+        defer { isLoading = false }
+        do {
+            let response = try await apiClient.staffNotifications(page: page)
+            items = reset ? response.items : items + response.items
+            unreadCount = response.unreadCount
+            hasNext = response.hasNext
+            if notifyOnNew {
+                notifyIfNewRiskChanges(in: response.items)
+            }
+        } catch {
+            self.error = error as? APIError ?? .unknown(message: error.localizedDescription)
+        }
+    }
+
+    func markRead(_ item: StaffNotificationItem) async {
+        guard item.unread else { return }
+        do {
+            _ = try await apiClient.markStaffNotificationRead(id: item.id)
+            await load(notifyOnNew: false)
+        } catch {
+            self.error = error as? APIError ?? .unknown(message: error.localizedDescription)
+        }
+    }
+
+    func markAllRead() async {
+        do {
+            try await apiClient.markAllStaffNotificationsRead()
+            unreadCount = 0
+            await load()
+        } catch {
+            self.error = error as? APIError ?? .unknown(message: error.localizedDescription)
+        }
+    }
+
+    private func notifyIfNewRiskChanges(in latest: [StaffNotificationItem]) {
+        let unreadItems = latest.filter(\.unread)
+        guard let newest = unreadItems.first else { return }
+        let signature = newest.id
+        if !didPrimeBaseline {
+            didPrimeBaseline = true
+            lastSignature = signature
+            return
+        }
+        guard signature != lastSignature else { return }
+        lastSignature = signature
+        HapticsManager.critical()
+        HapticsManager.playStaffCriticalAlertSound()
+        NotificationManager.shared.scheduleStaffRiskChangeNotification(
+            patientName: newest.patientName,
+            patientId: newest.patientId,
+            message: newest.message
+        )
+    }
+}
+
+@MainActor
 final class PatientDetailViewModel: ObservableObject {
     @Published var profile: PatientProfile?
     @Published var medications: [Medication] = []
@@ -565,11 +666,19 @@ final class OCRProcessingViewModel: ObservableObject {
             job = try await AsyncPoller<OCRJobResponse>(configuration: PollingConfiguration(timeout: 120)).poll {
                 try await apiClient.ocrJob(id: jobId)
             } isComplete: { response in
-                response.status == .needsReview || response.status == .completed || response.status == .failed
-            } isFailure: { response in
-                response.status == .failed || response.status == .cancelled
+                response.status == .needsReview || response.status == .completed || response.status == .failed || response.status == .cancelled
+            } isFailure: { _ in
+                false
             } serverDelay: { response in
                 response.pollAfterSeconds
+            }
+            if job?.status == .failed || job?.status == .cancelled {
+                self.error = APIError.server(
+                    code: job?.errorCode ?? "job_failed",
+                    message: job?.displayMessage ?? job?.errorMessage ?? L10n.text("staff.ocr.failed"),
+                    statusCode: 503,
+                    traceId: nil
+                )
             }
         } catch {
             self.error = error as? APIError ?? .unknown(message: error.localizedDescription)

@@ -15,6 +15,7 @@ Bộ tài liệu dùng cho phát triển, demo hackathon và thuyết trình. **
 | [IOS_PROJECT_BLUEPRINT.md](IOS_PROJECT_BLUEPRINT.md) | Cấu trúc project Xcode |
 | [FREE_NOTIFICATIONS.md](FREE_NOTIFICATIONS.md) | Thông báo local không cần Apple Developer |
 | [VNPT_INTEGRATION_NOTES.md](VNPT_INTEGRATION_NOTES.md) | Ghi chú tích hợp STT/TTS/SmartBot/OCR VNPT |
+| [../TESTING.md](../TESTING.md) | Test tự động + checklist demo submission |
 
 ## Tài nguyên test
 

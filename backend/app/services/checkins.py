@@ -2,6 +2,7 @@ from datetime import date, datetime, time
 
 from fastapi import UploadFile
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
@@ -26,6 +27,8 @@ from app.schemas.checkins import (
 )
 from app.services.auth import Principal
 from app.services.idempotency import IdempotencyService, request_hash
+from app.services.risk_classifier import classify_transcript
+from app.services.risk_notifications import apply_patient_risk_update
 from app.services.job_runner import job_runner
 from app.services.storage import StorageService
 from app.utils.datetime import now_utc
@@ -179,8 +182,30 @@ class CheckinService:
             patient_id=checkin.patient_id,
             source_id=response.id,
         )
-        response.job_id = job.id
-        self.session.add_all([response, job])
+        try:
+            self.session.add(response)
+            await self.session.flush()
+            self.session.add(job)
+            await self.session.flush()
+            response.job_id = job.id
+            await self.session.flush()
+        except IntegrityError:
+            await self.session.rollback()
+            replay = await self.idempotency.get_replay(
+                scope="checkin_response",
+                actor_id=principal.user_id,
+                client_request_id=client_request_id,
+                request_hash_value=payload_hash,
+            )
+            if replay and not replay.get("_conflict"):
+                return SubmitCheckinResponse.model_validate(replay)
+            if replay and replay.get("_conflict"):
+                raise APIError("conflict", replay["error"], 409)
+            raise APIError(
+                "conflict",
+                "Phản hồi check-in với client_request_id này đã tồn tại.",
+                409,
+            )
         if self.settings.vendor_mock_mode:
             await self._process_response(response=response, job=job)
         else:
@@ -235,7 +260,11 @@ class CheckinService:
             status=job.status,
             progress=job.progress,
             stage=job.stage,
-            display_message="Đang phân tích phản hồi..." if job.status != JobStatus.completed else "Đã phân tích xong.",
+            display_message=(
+                "Đang phân tích phản hồi..."
+                if job.status != JobStatus.completed
+                else "Check-in hôm nay thành công."
+            ),
             poll_after_seconds=job.poll_after_seconds,
             transcript=response.transcript if response else None,
             summary=response.summary if response else None,
@@ -281,9 +310,9 @@ class CheckinService:
                     patient_message=(
                         "Điều dưỡng đã để lại lời nhắn cho bác."
                         if staff_note
-                        else ("Điều dưỡng đã xem phản hồi." if item.handling_status else "Bác đã gửi phản hồi hôm nay.")
+                        else ("Điều dưỡng đã xem phản hồi." if item.handling_status else "Check-in hôm nay thành công.")
                     ),
-                    summary_for_patient=item.summary or "Bác đã gửi phản hồi hôm nay.",
+                    summary_for_patient=item.summary or "Check-in hôm nay thành công.",
                     staff_note=staff_note,
                 )
             )
@@ -375,13 +404,25 @@ class CheckinService:
     async def _process_response(self, *, response: CheckinResponse, job: Job) -> None:
         if response.patient_declared_risk_level and (response.transcript or "").strip():
             transcript = response.transcript.strip()
-            level = response.patient_declared_risk_level
-            reasons = [f"Bệnh nhân xác nhận: {self._risk_label(level)}"]
-            if level != RiskLevel.normal:
-                keyword_reasons = self._keyword_reasons(transcript)
-                reasons.extend(keyword_reasons[:2])
-            else:
+            declared_level = response.patient_declared_risk_level
+            classified_level, keyword_reasons = classify_transcript(
+                transcript,
+                source="checkin",
+                quick_answer_id=response.quick_answer_id,
+            )
+            level = max(
+                [declared_level, classified_level],
+                key=lambda item: {
+                    RiskLevel.intervention: 3,
+                    RiskLevel.attention: 2,
+                    RiskLevel.normal: 1,
+                }[item],
+            )
+            reasons = [f"Bệnh nhân xác nhận: {self._risk_label(declared_level)}"]
+            if level == RiskLevel.normal:
                 reasons.append("Bệnh nhân tự xác nhận tình trạng ổn định.")
+            else:
+                reasons.extend(keyword_reasons[:3])
             summary = self._summary_for(level, transcript)
         elif (response.transcript or "").strip():
             transcript = response.transcript.strip()
@@ -418,8 +459,15 @@ class CheckinService:
         job.completed_at = now_utc()
         patient = await self.session.get(Patient, response.patient_id)
         if patient:
-            patient.latest_risk_level = level
             patient.latest_checkin_at = now_utc()
+            await apply_patient_risk_update(
+                self.session,
+                patient=patient,
+                new_level=level,
+                source_type=TimelineEntryType.checkin_response,
+                source_id=response.id,
+                summary=summary,
+            )
         if response.needs_staff_review and not response.staff_alert_id:
             alert = StaffAlert(
                 id=new_id("alert"),
@@ -450,32 +498,12 @@ class CheckinService:
             "normal": "Hôm nay tôi thấy bình thường.",
         }.get(quick_answer_id or "")
 
-    def _keyword_reasons(self, transcript: str) -> list[str]:
-        lower = transcript.lower()
-        reasons: list[str] = []
-        if "đau ngực" in lower:
-            reasons.append("Check-in: bệnh nhân báo đau ngực")
-        if "khó thở" in lower:
-            reasons.append("Check-in: bệnh nhân báo khó thở")
-        if "ngất" in lower:
-            reasons.append("Check-in: bệnh nhân báo ngất hoặc choáng")
-        if "chóng mặt" in lower:
-            reasons.append("Check-in: bệnh nhân báo chóng mặt")
-        if "mệt" in lower:
-            reasons.append("Check-in: bệnh nhân báo mệt bất thường")
-        if "sốt" in lower:
-            reasons.append("Check-in: bệnh nhân báo sốt")
-        return reasons
-
     def _classify_risk(self, transcript: str, quick_answer_id: str | None) -> tuple[RiskLevel, list[str]]:
-        reasons = self._keyword_reasons(transcript)
-        if any("đau ngực" in r or "khó thở" in r or "ngất" in r for r in reasons):
-            return RiskLevel.intervention, reasons
-        if quick_answer_id == "yes":
-            reasons.append("Check-in: bệnh nhân chọn 'Có triệu chứng bất thường'")
-        if reasons:
-            return RiskLevel.attention, reasons
-        return RiskLevel.normal, ["Không có triệu chứng cảnh báo trong phản hồi hôm nay"]
+        return classify_transcript(
+            transcript,
+            source="checkin",
+            quick_answer_id=quick_answer_id,
+        )
 
     def _summary_for(self, level: RiskLevel, transcript: str) -> str:
         if level == RiskLevel.intervention:

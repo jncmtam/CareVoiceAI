@@ -1,5 +1,6 @@
 import SwiftUI
 
+@available(iOS 16.0, *)
 @main
 struct CareVoiceAIApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate

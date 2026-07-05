@@ -13,12 +13,6 @@ struct StaffDashboardView: View {
     @ViewBuilder
     private func dashboardList(scrollProxy: ScrollViewProxy) -> some View {
         List {
-            if AppConstants.isDemoMode {
-                DemoModeBanner()
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.appBackground)
-            }
-
             if let error = viewModel.error {
                 ErrorBannerView(message: error.userMessage) {
                     Task { await viewModel.load() }

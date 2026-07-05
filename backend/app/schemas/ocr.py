@@ -41,6 +41,9 @@ class OCRJobResponse(APIModel):
     draft_follow_up: FollowUpDraft | None = None
     instructions: str | None = None
     warnings: list[str] | None = None
+    error_code: str | None = None
+    error_message: str | None = None
+    display_message: str | None = None
 
 
 class CancelJobRequest(APIModel):

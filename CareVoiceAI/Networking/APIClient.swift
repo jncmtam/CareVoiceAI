@@ -125,12 +125,6 @@ nonisolated final class APIClient: @unchecked Sendable {
     }
 
     private func exchangeRefreshToken() async throws -> RefreshTokenResponse {
-        if AppConstants.isDemoMode {
-            guard let refreshToken = tokenStore.refreshToken else {
-                throw APIError.missingToken
-            }
-            return try await DemoAPIService.shared.refreshToken(refreshToken)
-        }
         guard let refreshToken = tokenStore.refreshToken else {
             throw APIError.missingToken
         }
@@ -234,96 +228,62 @@ nonisolated final class APIClient: @unchecked Sendable {
 
 extension APIClient {
     func loginStaff(login: String, password: String) async throws -> AuthResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.loginStaff(login: login, password: password)
-        }
         let body = try encodedBody(StaffLoginRequest(login: login, password: password, deviceId: DeviceIdentity.deviceID))
         let response: AuthResponse = try await send(APIEndpoint(method: .post, path: "auth/staff/login", body: body), requiresAuth: false)
         return response
     }
 
     func requestPatientOTP(phoneNumber: String, patientCode: String?) async throws -> PatientOtpResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.requestPatientOTP(phoneNumber: phoneNumber, patientCode: patientCode)
-        }
         let body = try encodedBody(PatientOtpRequest(phoneNumber: phoneNumber, patientCode: patientCode.nilIfEmpty))
         let response: PatientOtpResponse = try await send(APIEndpoint(method: .post, path: "auth/patient/request_otp", body: body), requiresAuth: false)
         return response
     }
 
     func verifyPatientOTP(sessionId: String, code: String) async throws -> AuthResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.verifyPatientOTP(sessionId: sessionId, code: code)
-        }
         let body = try encodedBody(PatientOtpVerifyRequest(otpSessionId: sessionId, otpCode: code, deviceId: DeviceIdentity.deviceID))
         let response: AuthResponse = try await send(APIEndpoint(method: .post, path: "auth/patient/verify_otp", body: body), requiresAuth: false)
         return response
     }
 
     func loginPatient(login: String, password: String) async throws -> AuthResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.loginPatient(login: login, password: password)
-        }
         let body = try encodedBody(PatientPasswordLoginRequest(login: login, password: password, deviceId: DeviceIdentity.deviceID))
         let response: AuthResponse = try await send(APIEndpoint(method: .post, path: "auth/patient/login", body: body), requiresAuth: false)
         return response
     }
 
     func loginPatientCode(patientCode: String, phoneLast4: String) async throws -> AuthResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.loginPatientCode(patientCode: patientCode, phoneLast4: phoneLast4)
-        }
         let body = try encodedBody(PatientCodeLoginRequest(patientCode: patientCode, phoneLast4: phoneLast4, deviceId: DeviceIdentity.deviceID))
         let response: AuthResponse = try await send(APIEndpoint(method: .post, path: "auth/patient/login_code", body: body), requiresAuth: false)
         return response
     }
 
     func refreshToken(_ refreshToken: String) async throws -> RefreshTokenResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.refreshToken(refreshToken)
-        }
         let body = try encodedBody(RefreshTokenRequest(refreshToken: refreshToken))
         let response: RefreshTokenResponse = try await send(APIEndpoint(method: .post, path: "auth/refresh", body: body), requiresAuth: false)
         return response
     }
 
     func logout(refreshToken: String?) async throws {
-        if AppConstants.isDemoMode {
-            try await DemoAPIService.shared.logout(refreshToken: refreshToken)
-            return
-        }
         let body = try encodedBody(LogoutRequest(deviceId: DeviceIdentity.deviceID, refreshToken: refreshToken))
         try await sendEmpty(APIEndpoint(method: .post, path: "auth/logout", body: body))
     }
 
     func me() async throws -> CurrentUserResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.me()
-        }
         let response: CurrentUserResponse = try await send(APIEndpoint(method: .get, path: "me"))
         return response
     }
 
     func createPatient(_ request: PatientCreateRequest) async throws -> PatientResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.createPatient(request)
-        }
         let response: PatientResponse = try await send(APIEndpoint(method: .post, path: "patients", body: try encodedBody(request)))
         return response
     }
 
     func patient(id: String) async throws -> PatientResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.patient(id: id)
-        }
         let response: PatientResponse = try await send(APIEndpoint(method: .get, path: "patients/\(id)"))
         return response
     }
 
     func updatePatient(id: String, request: PatientUpdateRequest) async throws -> PatientResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.updatePatient(id: id, request: request)
-        }
         let response: PatientResponse = try await send(
             APIEndpoint(method: .patch, path: "patients/\(id)", body: try encodedBody(request))
         )
@@ -331,57 +291,41 @@ extension APIClient {
     }
 
     func deletePatient(id: String) async throws -> PatientDeleteResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.deletePatient(id: id)
-        }
         let response: PatientDeleteResponse = try await send(APIEndpoint(method: .delete, path: "patients/\(id)"))
         return response
     }
 
     func myPatientProfile() async throws -> PatientResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.myPatientProfile()
-        }
         let response: PatientResponse = try await send(APIEndpoint(method: .get, path: "me/patient"))
         return response
     }
 
+    func myDailyTip() async throws -> DailyTipResponse {
+        let response: DailyTipResponse = try await send(APIEndpoint(method: .get, path: "me/daily_tip"))
+        return response
+    }
+
     func myMedications() async throws -> MedicationListResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.myMedications()
-        }
         let response: MedicationListResponse = try await send(APIEndpoint(method: .get, path: "me/medications"))
         return response
     }
 
     func medications(patientId: String) async throws -> MedicationListResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.medications(patientId: patientId)
-        }
         let response: MedicationListResponse = try await send(APIEndpoint(method: .get, path: "patients/\(patientId)/medications"))
         return response
     }
 
     func myAppointments() async throws -> AppointmentListResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.myAppointments()
-        }
         let response: AppointmentListResponse = try await send(APIEndpoint(method: .get, path: "me/appointments"))
         return response
     }
 
     func appointments(patientId: String) async throws -> AppointmentListResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.appointments(patientId: patientId)
-        }
         let response: AppointmentListResponse = try await send(APIEndpoint(method: .get, path: "patients/\(patientId)/appointments"))
         return response
     }
 
     func uploadDocument(patientId: String, documentType: DocumentType, mode: OcrMode, fileURL: URL) async throws -> DocumentUploadResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.uploadDocument(patientId: patientId, documentType: documentType, mode: mode, fileURL: fileURL)
-        }
         try UploadLimits.validateDocument(fileURL: fileURL)
         let data = try Data(contentsOf: fileURL)
         let file = MultipartFile(fieldName: "file", fileName: fileURL.lastPathComponent, mimeType: fileURL.uploadMimeType, data: data)
@@ -398,41 +342,26 @@ extension APIClient {
     }
 
     func ocrJob(id: String) async throws -> OCRJobResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.ocrJob(id: id)
-        }
         let response: OCRJobResponse = try await send(APIEndpoint(method: .get, path: "ocr/jobs/\(id)"))
         return response
     }
 
     func cancelOCRJob(id: String, reason: String) async throws -> CancelJobResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.cancelOCRJob(id: id, reason: reason)
-        }
         let response: CancelJobResponse = try await send(APIEndpoint(method: .post, path: "ocr/jobs/\(id)/cancel", body: try encodedBody(CancelJobRequest(reason: reason))))
         return response
     }
 
     func confirmOCR(patientId: String, uploadId: String, request: OCRConfirmRequest) async throws -> OCRConfirmResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.confirmOCR(patientId: patientId, uploadId: uploadId, request: request)
-        }
         let response: OCRConfirmResponse = try await send(APIEndpoint(method: .post, path: "patients/\(patientId)/documents/\(uploadId)/confirm_ocr", body: try encodedBody(request)))
         return response
     }
 
     func todayCheckin() async throws -> TodayCheckinResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.todayCheckin()
-        }
         let response: TodayCheckinResponse = try await send(APIEndpoint(method: .get, path: "me/checkins/today"))
         return response
     }
 
     func checkinAudio(checkinId: String) async throws -> CheckinAudioStatusResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.checkinAudio(checkinId: checkinId)
-        }
         let response: CheckinAudioStatusResponse = try await send(APIEndpoint(method: .get, path: "checkins/\(checkinId)/audio"))
         return response
     }
@@ -442,13 +371,6 @@ extension APIClient {
         audioURL: URL,
         duration: TimeInterval?
     ) async throws -> CheckinTranscribeResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.transcribeCheckinAudio(
-                checkinId: checkinId,
-                audioURL: audioURL,
-                duration: duration
-            )
-        }
         var fields: [String: String] = [:]
         if let duration {
             fields["recorded_duration_seconds"] = String(Int(duration.rounded()))
@@ -479,16 +401,6 @@ extension APIClient {
         duration: TimeInterval?,
         clientRequestId: String = UUID().uuidString
     ) async throws -> SubmitCheckinResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.submitCheckin(
-                checkinId: checkinId,
-                audioURL: audioURL,
-                quickAnswerId: quickAnswerId,
-                confirmedTranscript: confirmedTranscript,
-                patientDeclaredRiskLevel: patientDeclaredRiskLevel,
-                duration: duration
-            )
-        }
         var fields = [
             "client_recorded_at": ISO8601DateFormatter().string(from: Date()),
             "client_request_id": clientRequestId
@@ -515,17 +427,11 @@ extension APIClient {
     }
 
     func checkinJob(id: String) async throws -> CheckinJobResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.checkinJob(id: id)
-        }
         let response: CheckinJobResponse = try await send(APIEndpoint(method: .get, path: "checkin_jobs/\(id)"))
         return response
     }
 
     func checkinHistory(cursor: String? = nil) async throws -> CheckinHistoryResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.checkinHistory(cursor: cursor)
-        }
         var query = [URLQueryItem(name: "limit", value: "30")]
         if let cursor {
             query.append(URLQueryItem(name: "cursor", value: cursor))
@@ -535,9 +441,6 @@ extension APIClient {
     }
 
     func dashboardOverview() async throws -> DashboardOverview {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.dashboardOverview()
-        }
         let response: DashboardOverview = try await send(APIEndpoint(method: .get, path: "staff/dashboard/overview"))
         return response
     }
@@ -549,14 +452,6 @@ extension APIClient {
         handlingStatus: HandlingStatus? = nil,
         actionableOnly: Bool = false
     ) async throws -> PriorityPatientListResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.priorityPatients(
-                page: page,
-                query: query,
-                riskLevel: riskLevel,
-                actionableOnly: actionableOnly
-            )
-        }
         var items = [
             URLQueryItem(name: "page", value: "\(page)"),
             URLQueryItem(name: "per_page", value: "30")
@@ -578,15 +473,42 @@ extension APIClient {
     }
 
     func patientTimeline(patientId: String, cursor: String? = nil) async throws -> PatientTimelineResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.patientTimeline(patientId: patientId, cursor: cursor)
-        }
         var query = [URLQueryItem(name: "limit", value: "40")]
         if let cursor {
             query.append(URLQueryItem(name: "cursor", value: cursor))
         }
         let response: PatientTimelineResponse = try await send(APIEndpoint(method: .get, path: "staff/patients/\(patientId)/timeline", queryItems: query))
         return response
+    }
+
+    func staffNotifications(page: Int = 1, unreadOnly: Bool = false) async throws -> StaffNotificationListResponse {
+        var query = [
+            URLQueryItem(name: "page", value: "\(page)"),
+            URLQueryItem(name: "per_page", value: "30")
+        ]
+        if unreadOnly {
+            query.append(URLQueryItem(name: "unread_only", value: "true"))
+        }
+        let response: StaffNotificationListResponse = try await send(
+            APIEndpoint(method: .get, path: "staff/notifications", queryItems: query)
+        )
+        return response
+    }
+
+    func markStaffNotificationRead(id: String) async throws -> StaffNotificationReadResponse {
+        let response: StaffNotificationReadResponse = try await send(
+            APIEndpoint(method: .patch, path: "staff/notifications/\(id)/read")
+        )
+        return response
+    }
+
+    func markAllStaffNotificationsRead() async throws {
+        struct MarkAllResponse: Decodable {
+            let updatedCount: Int
+        }
+        let _: MarkAllResponse = try await send(
+            APIEndpoint(method: .post, path: "staff/notifications/mark_all_read")
+        )
     }
 
     func updateHandling(
@@ -596,18 +518,12 @@ extension APIClient {
         note: String?,
         callbackAt: Date? = nil
     ) async throws -> HandlingUpdateResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.updateHandling(patientId: patientId, entryId: entryId, status: status, note: note)
-        }
         let body = try encodedBody(HandlingUpdateRequest(handlingStatus: status, note: note.nilIfEmpty, callbackAt: callbackAt))
         let response: HandlingUpdateResponse = try await send(APIEndpoint(method: .patch, path: "staff/patients/\(patientId)/timeline/\(entryId)/handling", body: body))
         return response
     }
 
     func askHotlineText(patientId: String?, text: String) async throws -> HotlineQuestionResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.askHotlineText(patientId: patientId, text: text)
-        }
         let request = HotlineQuestionTextRequest(mode: "text", patientId: patientId, text: text, clientRequestId: UUID().uuidString)
         let response: HotlineQuestionResponse = try await send(APIEndpoint(method: .post, path: "hotline/questions", body: try encodedBody(request)))
         return response
@@ -638,13 +554,6 @@ extension APIClient {
         duration: TimeInterval?,
         clientRequestId: String
     ) async throws -> HotlineQuestionResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.askHotlineVoice(
-                patientId: patientId,
-                audioData: audioData,
-                duration: duration
-            )
-        }
         try UploadLimits.validateAudio(data: audioData, fileName: fileName)
         var fields = [
             "mode": "voice",
@@ -662,17 +571,11 @@ extension APIClient {
     }
 
     func hotlineQuestion(id: String) async throws -> HotlineQuestionStatusResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.hotlineQuestion(id: id)
-        }
         let response: HotlineQuestionStatusResponse = try await send(APIEndpoint(method: .get, path: "hotline/questions/\(id)"))
         return response
     }
 
     func hotlineHistory(patientId: String? = nil, cursor: String? = nil) async throws -> HotlineHistoryResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.hotlineHistory(patientId: patientId, cursor: cursor)
-        }
         var query = [URLQueryItem(name: "limit", value: "30")]
         if let patientId { query.append(URLQueryItem(name: "patient_id", value: patientId)) }
         if let cursor { query.append(URLQueryItem(name: "cursor", value: cursor)) }
@@ -685,9 +588,6 @@ extension APIClient {
         notificationChannel: NotificationChannel = .local,
         apnsToken: String? = nil
     ) async throws -> DeviceRegistrationResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.registerDevice(role: role, notificationChannel: notificationChannel)
-        }
         let appVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0"
         let osVersion = await MainActor.run {
             UIDevice.current.systemVersion
@@ -708,25 +608,15 @@ extension APIClient {
     }
 
     func deleteDevice() async throws {
-        if AppConstants.isDemoMode {
-            try await DemoAPIService.shared.deleteDevice()
-            return
-        }
         try await sendEmpty(APIEndpoint(method: .delete, path: "devices/\(DeviceIdentity.deviceID)"))
     }
 
     func notificationPreferences() async throws -> NotificationPreferencesResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.notificationPreferences()
-        }
         let response: NotificationPreferencesResponse = try await send(APIEndpoint(method: .get, path: "devices/\(DeviceIdentity.deviceID)/notification_preferences"))
         return response
     }
 
     func updateNotificationPreferences(_ preferences: NotificationPreferences) async throws -> NotificationPreferencesResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.updateNotificationPreferences(preferences)
-        }
         let request = NotificationPreferencesUpdateRequest(
             checkinRemindersEnabled: preferences.checkinRemindersEnabled,
             medicationRemindersEnabled: preferences.medicationRemindersEnabled,
@@ -737,40 +627,7 @@ extension APIClient {
         return response
     }
 
-    func createFaceVerificationSession(patientId: String) async throws -> FaceVerificationSessionResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.createFaceVerificationSession(patientId: patientId)
-        }
-        let request = FaceVerificationSessionRequest(patientId: patientId, purpose: "follow_up_visit")
-        let response: FaceVerificationSessionResponse = try await send(APIEndpoint(method: .post, path: "identity/face_verification/sessions", body: try encodedBody(request)))
-        return response
-    }
-
-    func faceVerificationStatus(sessionId: String) async throws -> FaceVerificationStatusResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.faceVerificationStatus(sessionId: sessionId)
-        }
-        let response: FaceVerificationStatusResponse = try await send(APIEndpoint(method: .get, path: "identity/face_verification/sessions/\(sessionId)"))
-        return response
-    }
-
-    func uploadFaceVerification(sessionId: String, imageData: Data) async throws -> FaceVerificationUploadResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.uploadFaceVerification(sessionId: sessionId, imageData: imageData)
-        }
-        let file = MultipartFile(fieldName: "image_file", fileName: "face.jpg", mimeType: "image/jpeg", data: imageData)
-        let response: FaceVerificationUploadResponse = try await upload(
-            path: "identity/face_verification/sessions/\(sessionId)/upload",
-            fields: [:],
-            files: [file]
-        )
-        return response
-    }
-
     func recordMedicationAdherence(medicationId: String, slot: String, taken: Bool) async throws -> MedicationAdherenceResponse {
-        if AppConstants.isDemoMode {
-            return try await DemoAPIService.shared.recordMedicationAdherence(medicationId: medicationId, slot: slot, taken: taken)
-        }
         let request = MedicationAdherenceRequest(
             medicationId: medicationId,
             slot: slot,

@@ -280,6 +280,22 @@ class StaffAlert(Base, TimestampMixin, SoftDeleteMixin, VersionMixin):
     callback_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
+class StaffNotification(Base, TimestampMixin, SoftDeleteMixin):
+    __tablename__ = "staff_notifications"
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), index=True)
+    notification_type: Mapped[str] = mapped_column(String(40), default="risk_change", nullable=False, index=True)
+    previous_risk_level: Mapped[RiskLevel | None] = enum_column(RiskLevel, nullable=True)
+    new_risk_level: Mapped[RiskLevel] = enum_column(RiskLevel, nullable=False, index=True)
+    source_type: Mapped[str | None] = mapped_column(String(40))
+    source_id: Mapped[str | None] = mapped_column(String(40), index=True)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    unread: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
+    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
 class HotlineQuestion(Base, TimestampMixin, SoftDeleteMixin, VersionMixin):
     __tablename__ = "hotline_questions"
     __table_args__ = (
@@ -325,21 +341,6 @@ class Device(Base, TimestampMixin, SoftDeleteMixin, VersionMixin):
     critical_staff_alerts_enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
 
-class FaceVerificationSession(Base, TimestampMixin, SoftDeleteMixin, VersionMixin):
-    __tablename__ = "face_verification_sessions"
-
-    id: Mapped[str] = mapped_column(String(40), primary_key=True)
-    patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), index=True)
-    requested_by_user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
-    purpose: Mapped[str] = mapped_column(String(80))
-    status: Mapped[str] = mapped_column(String(32), default="not_started", nullable=False)
-    upload_url: Mapped[str | None] = mapped_column(Text)
-    photo_url: Mapped[str | None] = mapped_column(Text)
-    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    needs_staff_review: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-
-
 class CaregiverAlertLog(Base, TimestampMixin):
     __tablename__ = "caregiver_alert_logs"
 
@@ -372,6 +373,19 @@ class MedicationAdherenceLog(Base, TimestampMixin):
     scheduled_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     taken: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     recorded_via: Mapped[str] = mapped_column(String(32), default="voice", nullable=False)
+
+
+class DailyHealthTip(Base, TimestampMixin):
+    __tablename__ = "daily_health_tips"
+    __table_args__ = (
+        UniqueConstraint("patient_id", "tip_date", name="uq_daily_tip_patient_day"),
+    )
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), index=True)
+    tip_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    tip_text: Mapped[str] = mapped_column(Text, nullable=False)
+    source_scope: Mapped[str] = mapped_column(String(64), default="smartbot", nullable=False)
 
 
 Index("ix_priority_patients", Patient.latest_risk_level, Patient.latest_checkin_at)

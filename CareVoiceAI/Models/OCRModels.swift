@@ -24,6 +24,9 @@ struct OCRJobResponse: Decodable {
     let draftFollowUp: FollowUpDraft?
     let instructions: String?
     let warnings: [String]?
+    let errorCode: String?
+    let errorMessage: String?
+    let displayMessage: String?
 }
 
 struct OCRPatientDraft: Codable {

@@ -39,30 +39,3 @@ struct NotificationPreferencesResponse: Decodable {
     let deviceId: String
     let preferences: NotificationPreferences
 }
-
-struct FaceVerificationSessionRequest: Encodable {
-    let patientId: String
-    let purpose: String
-}
-
-struct FaceVerificationSessionResponse: Decodable {
-    let sessionId: String
-    let status: String
-    let uploadUrl: URL?
-    let expiresAt: Date?
-}
-
-struct FaceVerificationStatusResponse: Decodable {
-    let sessionId: String
-    let status: String
-    let verifiedAt: Date?
-    let needsStaffReview: Bool
-}
-
-struct FaceVerificationUploadResponse: Decodable {
-    let sessionId: String
-    let status: String
-    let verifiedAt: Date?
-    let needsStaffReview: Bool
-    let message: String
-}

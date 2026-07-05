@@ -1,0 +1,59 @@
+{
+  "raw_text": "Mã hồ sơ: VC-2026-000003\nBệnh nhân: Trần Văn Bình\nNgày sinh: 11/11/1965\nGiới tính: Nam\nSĐT: 0912345678\nĐịa chỉ: Quận 7, TP.HCM\nChẩn đoán: COPD, Hen phế quản\n\nBác sĩ: BS. Nguyễn Thảo\nKhoa: Hô hấp\nNgày kê đơn: 05/07/2026\n\nĐƠN THUỐC:\n1. Salbutamol 100mcg — 2 nhát xịt khi khó thở, tối đa 4 lần/ngày.\n2. Budesonide 200mcg — 2 nhát xịt sáng và tối, súc miệng sau khi dùng.\n3. Theophylline 100mg — 1 viên 2 lần/ngày (sáng, chiều), uống sau ăn.\n\nTái khám Hô hấp sau 10 ngày.\n\nDặn dò: Không hút thuốc, tránh khói bụi. Mang theo thuốc xịt khi đi ra ngoài.\n\nNgười kê đơn: BS. Nguyễn Thảo",
+  "draft_patient": {
+    "full_name": "Trần Văn Bình",
+    "phone_number": "0912345678",
+    "diagnoses": [
+      "COPD, Hen phế quản"
+    ],
+    "primary_doctor_name": "BS. Nguyễn Thảo",
+    "confidence": 0.72
+  },
+  "draft_medications": [
+    {
+      "name": "Salbutamol",
+      "strength": "100mcg",
+      "dosage": "1 viên",
+      "frequency": "Theo đơn",
+      "times_of_day": [
+        "evening"
+      ],
+      "instructions": "1. Salbutamol 100mcg — 2 nhát xịt khi khó thở, tối đa 4 lần/ngày.",
+      "confidence": 0.7
+    },
+    {
+      "name": "Budesonide",
+      "strength": "200mcg",
+      "dosage": "1 viên",
+      "frequency": "Theo đơn",
+      "times_of_day": [
+        "morning",
+        "evening"
+      ],
+      "instructions": "2. Budesonide 200mcg — 2 nhát xịt sáng và tối, súc miệng sau khi dùng.",
+      "confidence": 0.7
+    },
+    {
+      "name": "Theophylline",
+      "strength": "100mg",
+      "dosage": "1 viên",
+      "frequency": "2 lần/ngày",
+      "times_of_day": [
+        "morning",
+        "afternoon"
+      ],
+      "instructions": "3. Theophylline 100mg — 1 viên 2 lần/ngày (sáng, chiều), uống sau ăn.",
+      "confidence": 0.7
+    }
+  ],
+  "draft_follow_up": {
+    "department": "Hô hấp",
+    "doctor_name": "BS. Nguyễn Thảo",
+    "appointment_at": "2026-07-15T13:38:37.227966+00:00"
+  },
+  "instructions": "Không hút thuốc, tránh khói bụi. Mang theo thuốc xịt khi đi ra ngoài.",
+  "warnings": [
+    "Điều dưỡng kiểm tra và chỉnh sửa trước khi lưu vào hồ sơ.",
+    "Có 3 dòng thuốc độ tin cậy thấp, cần kiểm tra lại."
+  ]
+}

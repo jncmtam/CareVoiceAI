@@ -70,27 +70,36 @@ check_status "Medications" "200" "$(echo "$MEDS" | tail -n1)" "$(echo "$MEDS" | 
 APPTS=$(curl -s -w "\n%{http_code}" -H "$STAFF_HDR" "$BASE/patients/pat_001/appointments")
 check_status "Appointments" "200" "$(echo "$APPTS" | tail -n1)" "$(echo "$APPTS" | sed '$d')"
 
-# 8. OCR upload → poll → confirm
+# 8. OCR upload → poll → confirm (dùng đơn thuốc mẫu thật)
+OCR_FIXTURE="$(cd "$(dirname "$0")/../test/ocr" && pwd)/don_thuoc_chu_minh_tam.docx"
+if [[ ! -f "$OCR_FIXTURE" ]]; then
+  bad "Missing OCR fixture: $OCR_FIXTURE (chạy python scripts/generate_sample_prescription.py)"
+fi
 OCR_UP=$(curl -s -w "\n%{http_code}" -X POST "$BASE/patients/pat_001/documents" \
   -H "$STAFF_HDR" \
   -F "document_type=prescription" \
   -F "ocr_mode=auto" \
   -F "client_request_id=smoke-ocr-$(date +%s)" \
-  -F "file=@-;filename=prescription.pdf;type=application/pdf" <<< "Metformin 500mg 2 lan/ngay")
+  -F "file=@${OCR_FIXTURE};type=application/vnd.openxmlformats-officedocument.wordprocessingml.document")
 OCR_BODY=$(echo "$OCR_UP" | sed '$d')
 OCR_CODE=$(echo "$OCR_UP" | tail -n1)
 check_status "OCR upload" "202" "$OCR_CODE" "$OCR_BODY"
 JOB_ID=$(echo "$OCR_BODY" | python3 -c "import sys,json; print(json.load(sys.stdin)['job_id'])")
 UPLOAD_ID=$(echo "$OCR_BODY" | python3 -c "import sys,json; print(json.load(sys.stdin)['upload_id'])")
 
-for i in $(seq 1 20); do
+for i in $(seq 1 40); do
   OCR_JOB=$(curl -s -H "$STAFF_HDR" "$BASE/ocr/jobs/$JOB_ID")
   STATUS=$(echo "$OCR_JOB" | python3 -c "import sys,json; print(json.load(sys.stdin)['status'])")
   if [[ "$STATUS" == "needs_review" ]]; then
     ok "OCR job polling → $STATUS"
     break
   fi
-  sleep 0.2
+  if [[ "$STATUS" == "failed" ]]; then
+    ERR=$(echo "$OCR_JOB" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('display_message') or d.get('error_message') or 'failed')")
+    bad "OCR job failed: $ERR"
+    break
+  fi
+  sleep 0.5
 done
 [[ "$STATUS" == "needs_review" ]] || bad "OCR job did not reach needs_review (last: $STATUS)"
 
@@ -138,13 +147,17 @@ HOT_TEXT=$(curl -s -w "\n%{http_code}" -X POST "$BASE/hotline/questions" \
   -d '{"mode":"text","text":"Toi quen uong thuoc buoi sang thi co uong bu khong?","client_request_id":"smoke-hot-text-'$(date +%s)'"}')
 check_status "Hotline text" "200" "$(echo "$HOT_TEXT" | tail -n1)" "$(echo "$HOT_TEXT" | sed '$d')"
 
-# 11. Hotline voice (mock STT via quick audio)
+# 11. Hotline voice (WAV mẫu thật cho STT production)
+HOT_WAV="$(cd "$(dirname "$0")/../test/stt" && pwd)/STT.sample.wav"
+if [[ ! -f "$HOT_WAV" ]]; then
+  bad "Missing hotline audio fixture: $HOT_WAV"
+fi
 HOT_VOICE=$(curl -s -w "\n%{http_code}" -X POST "$BASE/hotline/questions" \
   -H "$PAT_HDR" \
   -F "mode=voice" \
-  -F "recorded_duration_seconds=5" \
+  -F "recorded_duration_seconds=3" \
   -F "client_request_id=smoke-hot-voice-$(date +%s)" \
-  -F "audio_file=@-;filename=voice.m4a;type=audio/m4a" <<< "fake-audio-bytes")
+  -F "audio_file=@${HOT_WAV};filename=voice.wav;type=audio/wav")
 HOT_V_BODY=$(echo "$HOT_VOICE" | sed '$d')
 HOT_V_CODE=$(echo "$HOT_VOICE" | tail -n1)
 # mock mode may return 200 completed or 202 transcribing
@@ -154,16 +167,21 @@ else
   bad "Hotline voice → HTTP $HOT_V_CODE"
 fi
 HOT_QID=$(echo "$HOT_V_BODY" | python3 -c "import sys,json; print(json.load(sys.stdin)['question_id'])")
-for i in $(seq 1 20); do
+for i in $(seq 1 40); do
   HQ=$(curl -s -H "$PAT_HDR" "$BASE/hotline/questions/$HOT_QID")
   HSTATUS=$(echo "$HQ" | python3 -c "import sys,json; print(json.load(sys.stdin)['status'])")
-  if [[ "$HSTATUS" == "completed" ]]; then
-    ok "Hotline voice poll → completed"
+  if [[ "$HSTATUS" == "completed" || "$HSTATUS" == "needs_review" ]]; then
+    ok "Hotline voice poll → $HSTATUS"
     break
   fi
-  sleep 0.2
+  if [[ "$HSTATUS" == "failed" ]]; then
+    ERR=$(echo "$HQ" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('display_message') or d.get('error_message') or 'failed')")
+    bad "Hotline voice failed: $ERR"
+    break
+  fi
+  sleep 0.5
 done
-[[ "$HSTATUS" == "completed" ]] || bad "Hotline voice not completed (last: $HSTATUS)"
+[[ "$HSTATUS" == "completed" || "$HSTATUS" == "needs_review" ]] || bad "Hotline voice not completed (last: $HSTATUS)"
 
 HOT_HIST=$(curl -s -w "\n%{http_code}" -H "$PAT_HDR" "$BASE/hotline/questions?limit=5")
 check_status "Hotline history" "200" "$(echo "$HOT_HIST" | tail -n1)" "$(echo "$HOT_HIST" | sed '$d')"

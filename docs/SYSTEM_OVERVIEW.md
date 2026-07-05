@@ -110,10 +110,10 @@ Mỗi lần phân loại kèm `reasons[]` (explainable) — hiển thị trên a
 | Đã sẵn sàng demo | Chưa production |
 |------------------|-----------------|
 | Full API + iOS flows | SMS gateway thật |
-| Mock + live VNPT gateway | eKYC VNPT live |
-| Idempotency, rate limit | Alembic migration, S3 |
-| 27+ pytest | APNs server push |
-| Script VNPT WAV demo | Redis job queue |
+| Mock + live VNPT gateway | Alembic migration, S3 |
+| Idempotency, rate limit | APNs server push |
+| 27+ pytest | Redis job queue |
+| Script VNPT WAV demo | |
 
 Chi tiết chức năng: [FEATURES_AND_FLOWS.md](FEATURES_AND_FLOWS.md)  
 Chạy thử: [SETUP_AND_ACCOUNTS.md](SETUP_AND_ACCOUNTS.md)

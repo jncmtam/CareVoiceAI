@@ -1,0 +1,58 @@
+{
+  "raw_text": "Mã hồ sơ: VC-2026-000005\nBệnh nhân: Lê Văn Đức\nNgày sinh: 08/09/1970\nGiới tính: Nam\nSĐT: 0978123456\nĐịa chỉ: Thủ Đức, TP.HCM\nChẩn đoán: Suy thận mạn giai đoạn 3, Gout\n\nBác sĩ: BS. Hoàng An\nKhoa: Thận\nNgày kê đơn: 05/07/2026\n\nĐƠN THUỐC:\n1. Losartan 50mg — 1 viên mỗi sáng, uống sau ăn.\n2. Allopurinol 100mg — 1 viên buổi tối, uống nhiều nước.\n3. Sodium bicarbonate 500mg — 1 viên 2 lần/ngày (sáng, tối).\n\nTái khám Thận sau 14 ngày.\n\nDặn dò: Hạn chế thịt đỏ và bia rượu. Theo dõi huyết áp và cân nặng hàng ngày.\n\nNgười kê đơn: BS. Hoàng An",
+  "draft_patient": {
+    "full_name": "Lê Văn Đức",
+    "phone_number": "0978123456",
+    "diagnoses": [
+      "Suy thận mạn giai đoạn 3, Gout"
+    ],
+    "primary_doctor_name": "BS. Hoàng An",
+    "confidence": 0.72
+  },
+  "draft_medications": [
+    {
+      "name": "Losartan",
+      "strength": "50mg",
+      "dosage": "1 viên",
+      "frequency": "Mỗi sáng",
+      "times_of_day": [
+        "morning"
+      ],
+      "instructions": "1. Losartan 50mg — 1 viên mỗi sáng, uống sau ăn.",
+      "confidence": 0.7
+    },
+    {
+      "name": "Allopurinol",
+      "strength": "100mg",
+      "dosage": "1 viên",
+      "frequency": "Theo đơn",
+      "times_of_day": [
+        "evening"
+      ],
+      "instructions": "2. Allopurinol 100mg — 1 viên buổi tối, uống nhiều nước.",
+      "confidence": 0.7
+    },
+    {
+      "name": "Sodium bicarbonate",
+      "strength": "500mg",
+      "dosage": "1 viên",
+      "frequency": "2 lần/ngày",
+      "times_of_day": [
+        "morning",
+        "evening"
+      ],
+      "instructions": "3. Sodium bicarbonate 500mg — 1 viên 2 lần/ngày (sáng, tối).",
+      "confidence": 0.7
+    }
+  ],
+  "draft_follow_up": {
+    "department": null,
+    "doctor_name": "BS. Hoàng An",
+    "appointment_at": "2026-07-19T13:38:37.248134+00:00"
+  },
+  "instructions": "Hạn chế thịt đỏ và bia rượu. Theo dõi huyết áp và cân nặng hàng ngày.",
+  "warnings": [
+    "Điều dưỡng kiểm tra và chỉnh sửa trước khi lưu vào hồ sơ.",
+    "Có 3 dòng thuốc độ tin cậy thấp, cần kiểm tra lại."
+  ]
+}

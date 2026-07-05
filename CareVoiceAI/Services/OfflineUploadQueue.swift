@@ -106,8 +106,13 @@ actor OfflineUploadQueue {
         save(items)
     }
 
-    func enqueueHotlineVoice(patientId: String?, audioURL: URL, duration: TimeInterval?) async throws {
-        let clientRequestId = UUID().uuidString
+    func enqueueHotlineVoice(
+        patientId: String?,
+        audioURL: URL,
+        duration: TimeInterval?,
+        clientRequestId: String? = nil
+    ) async throws {
+        let clientRequestId = clientRequestId ?? UUID().uuidString
         let storedFileName = try storeAudioIfNeeded(audioURL)
         guard !storedFileName.isEmpty else {
             throw APIError.file(message: L10n.text("error.file_unreadable"))
@@ -196,7 +201,9 @@ actor OfflineUploadQueue {
                 return
             } catch let error as APIError {
                 if case .server(let code, _, let statusCode, _) = error,
-                   code == "conflict", statusCode == 409, attempt == 0 {
+                   statusCode == 409,
+                   (code == "conflict" || code == "http_409"),
+                   attempt == 0 {
                     clientRequestId = UUID().uuidString
                     continue
                 }

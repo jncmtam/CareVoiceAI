@@ -238,18 +238,3 @@ struct QuickActionSticker: View {
     }
 }
 
-struct DemoModeBanner: View {
-    var body: some View {
-        HStack(alignment: .top, spacing: CVSpacing.sm) {
-            Image(systemName: "iphone.and.arrow.forward")
-                .foregroundColor(.riskAttention)
-            Text(L10n.text("settings.demo_mode_on_hint"))
-                .font(.footnote)
-                .foregroundColor(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(CVSpacing.md)
-        .background(Color.riskAttention.opacity(0.10))
-        .cornerRadius(8)
-    }
-}

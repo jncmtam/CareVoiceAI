@@ -82,7 +82,6 @@ CareVoiceAI/
       MedicationListView.swift
       AppointmentListView.swift
       HotlineView.swift
-      FaceVerificationPlaceholderView.swift
     NurseRole/
       StaffDashboardView.swift
       PatientDetailView.swift
@@ -157,4 +156,4 @@ CareVoiceAI/
 - exponential backoff có jitter
 - huỷ khi view biến mất
 
-Dùng cho OCR, phân tích check-in, trạng thái audio TTS, hotline voice và eKYC tạm thời.
+Dùng cho OCR, phân tích check-in, trạng thái audio TTS và hotline voice.

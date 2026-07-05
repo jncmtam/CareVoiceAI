@@ -4,7 +4,6 @@ import UIKit
 
 @MainActor
 final class PatientHomeViewModel: ObservableObject {
-    @Published var checkinState: LoadableState<Checkin> = .idle
     @Published var medications: [Medication] = []
     @Published var appointments: [Appointment] = []
     @Published var error: APIError?
@@ -20,26 +19,17 @@ final class PatientHomeViewModel: ObservableObject {
     }
 
     func load() async {
-        checkinState = .loading(L10n.loading)
         error = nil
         do {
-            async let checkin: TodayCheckinResponse = apiClient.todayCheckin()
             async let medicationResponse: MedicationListResponse = apiClient.myMedications()
             async let appointmentResponse: AppointmentListResponse = apiClient.myAppointments()
-            let values: (TodayCheckinResponse, MedicationListResponse, AppointmentListResponse) = try await (checkin, medicationResponse, appointmentResponse)
-            checkinState = .loaded(values.0.checkin)
-            medications = values.1.medications
-            appointments = values.2.appointments
+            let values: (MedicationListResponse, AppointmentListResponse) = try await (medicationResponse, appointmentResponse)
+            medications = values.0.medications
+            appointments = values.1.appointments
             await scheduleAppointmentRemindersIfNeeded()
-            if let audioURL = values.0.checkin.audioUrl, values.0.checkin.audioStatus == .ready {
-                Task {
-                    _ = try? await AudioCache.shared.cachedFile(for: audioURL, cacheKey: values.0.checkin.audioCacheKey)
-                }
-            }
         } catch {
             let apiError = error as? APIError ?? .unknown(message: error.localizedDescription)
             self.error = apiError
-            checkinState = .failed(apiError)
         }
     }
 
@@ -141,7 +131,6 @@ final class TodayCheckinViewModel: ObservableObject {
                 let job = try await apiClient.checkinJob(id: jobId)
                 guard job.status == .completed else { return }
                 analysisResult = job
-                MorningRoutineTracker.shared.markCheckinDone()
                 if job.risk?.needsStaffReview == true {
                     caregiverNotifiedAt = job.caregiverAlertSentAt ?? Date()
                 }
@@ -176,7 +165,6 @@ final class TodayCheckinViewModel: ObservableObject {
             caregiverAlertSentAt: riskLevel != .normal ? todayItem.checkedInAt : nil,
             completedAt: todayItem.checkedInAt
         )
-        MorningRoutineTracker.shared.markCheckinDone()
         if riskLevel != .normal {
             caregiverNotifiedAt = analysisResult?.caregiverAlertSentAt ?? todayItem.checkedInAt
         }
@@ -448,7 +436,6 @@ final class TodayCheckinViewModel: ObservableObject {
             }
             analysisResult = result
             pollingMessage = nil
-            MorningRoutineTracker.shared.markCheckinDone()
             let needsReview = result.risk?.needsStaffReview == true
             if needsReview {
                 HapticsManager.warning()
@@ -491,6 +478,50 @@ final class CheckinHistoryViewModel: ObservableObject {
         } catch {
             self.error = error as? APIError ?? .unknown(message: error.localizedDescription)
         }
+    }
+}
+
+@MainActor
+final class DailyTipViewModel: ObservableObject {
+    enum State {
+        case idle
+        case loading
+        case loaded(DailyTipResponse)
+        case failed(APIError)
+    }
+
+    @Published private(set) var state: State = .idle
+    @Published var error: APIError?
+
+    private let apiClient: APIClient
+
+    convenience init() {
+        self.init(apiClient: .shared)
+    }
+
+    init(apiClient: APIClient) {
+        self.apiClient = apiClient
+    }
+
+    func load() async {
+        state = .loading
+        error = nil
+        do {
+            let tip = try await apiClient.myDailyTip()
+            state = .loaded(tip)
+            if !MorningRoutineTracker.shared.dailyTipCompleted {
+                SpeechReminderService.shared.speakDailyTip(tip.tipText)
+            }
+        } catch {
+            let apiError = error as? APIError ?? .unknown(message: error.localizedDescription)
+            self.error = apiError
+            state = .failed(apiError)
+        }
+    }
+
+    func markDone() {
+        MorningRoutineTracker.shared.markDailyTipDone()
+        HapticsManager.success()
     }
 }
 
@@ -675,9 +706,11 @@ final class HotlineViewModel: ObservableObject {
 
     func confirmSendVoice() async {
         guard hasPendingVoice, !isSubmittingVoice, !isLoading, !isProcessing else { return }
-        await sendVoice()
-        hasPendingVoice = false
-        pendingVoiceClientRequestId = nil
+        let succeeded = await sendVoice()
+        if succeeded {
+            hasPendingVoice = false
+            pendingVoiceClientRequestId = nil
+        }
     }
 
     func discardPendingVoice() {
@@ -695,9 +728,10 @@ final class HotlineViewModel: ObservableObject {
         }
     }
 
-    private func sendVoice() async {
-        guard let audioURL = recorder.lastRecordingURL else { return }
-        guard !isSubmittingVoice else { return }
+    @discardableResult
+    private func sendVoice() async -> Bool {
+        guard let audioURL = recorder.lastRecordingURL else { return false }
+        guard !isSubmittingVoice else { return false }
         isSubmittingVoice = true
         isLoading = true
         error = nil
@@ -715,24 +749,27 @@ final class HotlineViewModel: ObservableObject {
                 try await OfflineUploadQueue.shared.enqueueHotlineVoice(
                     patientId: nil,
                     audioURL: audioURL,
-                    duration: duration
+                    duration: duration,
+                    clientRequestId: pendingVoiceClientRequestId
                 )
                 recorder.clearRecording()
-                hasPendingVoice = false
                 offlineMessage = L10n.savedOffline
                 HapticsManager.success()
+                return true
             } catch {
                 self.error = APIError.from(error)
+                return false
             }
-            return
         }
 
         do {
             let response = try await submitHotlineVoice(audioURL: audioURL, duration: duration)
             recorder.clearRecording()
             await handle(response)
+            return true
         } catch {
             self.error = APIError.from(error)
+            return false
         }
     }
 
@@ -741,6 +778,9 @@ final class HotlineViewModel: ObservableObject {
         let audioData = try Data(contentsOf: audioURL)
         try UploadLimits.validateAudio(data: audioData, fileName: audioURL.lastPathComponent)
 
+        if pendingVoiceClientRequestId == nil {
+            pendingVoiceClientRequestId = UUID().uuidString
+        }
         var clientRequestId = pendingVoiceClientRequestId ?? UUID().uuidString
         for attempt in 0..<3 {
             do {
@@ -754,7 +794,9 @@ final class HotlineViewModel: ObservableObject {
                 )
             } catch let error as APIError {
                 if case .server(let code, _, let statusCode, _) = error,
-                   code == "conflict", statusCode == 409, attempt < 2 {
+                   statusCode == 409,
+                   (code == "conflict" || code == "http_409"),
+                   attempt < 2 {
                     clientRequestId = UUID().uuidString
                     pendingVoiceClientRequestId = clientRequestId
                     continue
@@ -847,61 +889,6 @@ final class HotlineViewModel: ObservableObject {
             return L10n.text("hotline.answering")
         default:
             return L10n.text("hotline.processing")
-        }
-    }
-}
-
-@MainActor
-final class FaceVerificationViewModel: ObservableObject {
-    @Published var statusText: String?
-    @Published var sessionId: String?
-    @Published var isVerified = false
-    @Published var isLoading = false
-    @Published var error: APIError?
-
-    private let apiClient: APIClient
-    private let session: SessionManager
-
-    convenience init() {
-        self.init(apiClient: .shared, session: .shared)
-    }
-
-    init(apiClient: APIClient, session: SessionManager) {
-        self.apiClient = apiClient
-        self.session = session
-    }
-
-    func start() async {
-        guard let patientId = session.patientContext?.id else { return }
-        isLoading = true
-        error = nil
-        defer { isLoading = false }
-        do {
-            let response = try await apiClient.createFaceVerificationSession(patientId: patientId)
-            sessionId = response.sessionId
-            statusText = L10n.text("face.ready_capture")
-            HapticsManager.success()
-        } catch {
-            self.error = error as? APIError ?? .unknown(message: error.localizedDescription)
-        }
-    }
-
-    func upload(image: UIImage) async {
-        guard let sessionId, let data = image.jpegData(compressionQuality: 0.85) else { return }
-        isLoading = true
-        error = nil
-        statusText = L10n.text("face.uploading")
-        defer { isLoading = false }
-        do {
-            let response = try await apiClient.uploadFaceVerification(sessionId: sessionId, imageData: data)
-            statusText = response.message
-            isVerified = response.status == "verified"
-            if isVerified {
-                MorningRoutineTracker.shared.markFaceVerifyDone()
-            }
-            HapticsManager.success()
-        } catch {
-            self.error = error as? APIError ?? .unknown(message: error.localizedDescription)
         }
     }
 }

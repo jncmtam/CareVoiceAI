@@ -85,5 +85,4 @@ class JobType(str, Enum):
     checkin_analysis = "checkin_analysis"
     hotline = "hotline"
     tts = "tts"
-    face_verification = "face_verification"
 

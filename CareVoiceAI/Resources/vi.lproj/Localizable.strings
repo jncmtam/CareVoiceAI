@@ -56,7 +56,7 @@
 "auth.verify_otp" = "Xác nhận OTP";
 "auth.otp_code" = "Mã OTP";
 "auth.login_patient_code" = "Đăng nhập bằng mã bệnh nhân";
-"auth.demo_login" = "Đăng nhập (demo)";
+
 "auth.account" = "Tài khoản";
 "auth.invalid_patient_credentials" = "Mã bệnh nhân hoặc 4 số cuối điện thoại không đúng.";
 "auth.otp_sent_to" = "Mã OTP đã gửi tới %@";
@@ -72,7 +72,7 @@
 "patient.checkin.preparing_question" = "Đang chuẩn bị câu hỏi...";
 "patient.checkin.analyzing_response" = "Đang phân tích phản hồi...";
 "patient.checkin.saved_offline" = "Đã lưu tạm. CareVoice AI sẽ gửi khi có mạng.";
-"patient.checkin.sent" = "Bác đã gửi phản hồi hôm nay.";
+"patient.checkin.sent" = "Check-in hôm nay thành công.";
 "patient.checkin.human_review_note" = "Hệ thống chỉ gợi ý. Điều dưỡng/bác sĩ sẽ xác nhận khi cần.";
 "patient.checkin.text_only" = "Câu hỏi hiện có dạng chữ.";
 "patient.checkin.speaker_tap" = "Chạm loa để nghe câu hỏi";
@@ -98,7 +98,7 @@
 "patient.checkin.step_speak" = "Chọn tình trạng";
 "patient.checkin.step_confirm" = "Xác nhận";
 "patient.checkin.symptoms_placeholder" = "Ví dụ: hôm nay tôi hơi chóng mặt, không đau ngực, không sốt...";
-"patient.checkin.completed_badge" = "Đã check-in hôm nay";
+"patient.checkin.completed_badge" = "Check-in hôm nay thành công";
 "patient.checkin.home_subtitle" = "Chạm để bắt đầu — nghe câu hỏi, chọn ổn/bình thường/có vấn đề";
 "patient.checkin.transcribing" = "Đang chuyển giọng nói thành chữ...";
 "patient.checkin.review_title" = "Xác nhận trước khi gửi";
@@ -147,6 +147,10 @@
 "staff.dashboard.title" = "Cảnh báo ưu tiên";
 "staff.dashboard.patients" = "Danh sách ưu tiên";
 "staff.dashboard.empty" = "Chưa có bệnh nhân cần rà soát.";
+"staff.notifications.title" = "Thông báo thay đổi";
+"staff.notifications.title_short" = "Thông báo";
+"staff.notifications.empty" = "Chưa có thông báo thay đổi tình trạng.";
+"staff.notifications.mark_all_read" = "Đọc hết";
 "staff.dashboard.kpi" = "Tổng quan hôm nay";
 "staff.search" = "Tìm kiếm";
 "staff.search.placeholder" = "Tên, mã bệnh nhân";
@@ -182,6 +186,7 @@
 "staff.ocr.confirm" = "Xác nhận đơn thuốc";
 "staff.ocr.background_note" = "OCR có thể mất vài giây đến vài chục giây. Điều dưỡng có thể quay lại danh sách trong lúc chờ.";
 "staff.ocr.missing_upload" = "Thiếu mã upload. Vui lòng tải lại tài liệu.";
+"staff.ocr.failed" = "Không đọc được đơn thuốc. Vui lòng thử lại hoặc nhập tay.";
 "staff.ocr.saved" = "Đã lưu";
 "staff.ocr.saved_message" = "Đơn thuốc đã được xác nhận và lưu vào hồ sơ.";
 "staff.timeline.mark_viewed" = "Đã xem";
@@ -200,7 +205,6 @@
 "staff.kpi.pending_analysis" = "Phân tích chờ";
 "staff.patient.missed_doses" = "Bỏ %d liều thuốc gần đây";
 "staff.patient.alert_reasons" = "Lý do cảnh báo";
-"face.title_short" = "Xác thực khuôn mặt";
 "hotline.confirm_send_voice" = "Gửi câu hỏi giọng nói";
 "adherence.confirm_now" = "Xác nhận";
 "staff.timeline.note_hint" = "Bác sĩ/điều dưỡng sẽ thấy ghi chú này. Bệnh nhân cũng đọc được trong Lịch sử check-in.";
@@ -220,9 +224,7 @@
 "settings.account" = "Tài khoản";
 "settings.app_tagline" = "Chăm sóc bằng giọng nói, gần gũi mỗi ngày";
 "settings.notifications" = "Thông báo";
-"settings.demo" = "Demo";
-"settings.demo_mode" = "Dữ liệu demo";
-"settings.demo_mode_on_hint" = "Đang dùng dữ liệu giả trên máy này. Bệnh nhân và điều dưỡng chỉ đồng bộ khi cùng một app (đổi vai trò). Tắt để kết nối backend thật.";
+
 "settings.connection" = "Kết nối backend";
 "settings.api_base_url" = "Địa chỉ API";
 "settings.api_save" = "Lưu và kiểm tra";
@@ -305,16 +307,8 @@
 "notification.appointment.body_soon_date" = "Ngày mai bác có lịch tái khám vào %@.";
 "notification.appointment.body_soon_department" = "Ngày mai bác tái khám vào %@ tại %@.";
 "notification.appointment.body_soon_detail" = "Ngày mai bác tái khám vào %@ tại %@ với %@.";
-"face.title" = "Xác thực khuôn mặt khi tái khám";
-"face.subtitle" = "Chụp ảnh khuôn mặt để xác nhận danh tính trước khi tái khám.";
-"face.start" = "Bắt đầu xác thực";
-"face.session_created" = "Đã tạo phiên xác thực %@";
-"face.ready_capture" = "Sẵn sàng chụp ảnh. Bác nhìn thẳng vào camera.";
-"face.capture" = "Chụp ảnh xác thực";
-"face.uploading" = "Đang xác thực khuôn mặt...";
-"face.verified" = "Xác thực thành công";
-"patient.morning.title" = "Buổi sáng của bác";
-"patient.morning.subtitle" = "3 bước nhanh: check-in, uống thuốc và xác thực khuôn mặt.";
+"patient.morning.title" = "Việc cần làm hôm nay";
+"patient.morning.subtitle" = "2 bước: uống thuốc và lời khuyên hôm nay.";
 "patient.checkin.reasons_title" = "Lý do phân loại";
 "staff.caregiver_alert_sent" = "Đã báo người nhà";
 "staff.caregiver_alert_banner" = "Đã gửi SMS thông báo cho người nhà";
@@ -331,6 +325,8 @@
 "medication.slot.afternoon" = "Chiều";
 "medication.slot.evening" = "Tối";
 "medication.slot.bedtime" = "Trước ngủ";
+"notification.staff.risk_change.title" = "Thay đổi tình trạng bệnh nhân";
+"notification.staff.risk_change.body" = "%@: %@";
 "notification.staff.critical.title" = "Cảnh báo bệnh nhân cần can thiệp";
 "notification.staff.critical.body" = "Có %d bệnh nhân cần can thiệp ngay. Mở bảng điều khiển để xem.";
 "notification.staff.critical.body_named" = "%@ cần điều dưỡng gọi lại ngay. Chạm để xem hồ sơ.";
@@ -343,12 +339,18 @@
 "staff.impact.calls" = "cuộc gọi ưu tiên";
 "staff.impact.checkins" = "hoàn thành check-in";
 "patient.morning.progress" = "Hoàn thành %d/%d bước";
-"patient.morning.complete" = "Buổi sáng hoàn tất. Bác nghỉ ngơi nhé!";
-"patient.morning.voice_welcome" = "Chào bác. CareVoice AI sẽ hướng dẫn ba bước buổi sáng: check-in, uống thuốc và xác thực khuôn mặt.";
+"patient.morning.complete" = "Đã xong việc hôm nay. Cảm ơn bác!";
+"patient.morning.voice_welcome" = "Chào bác. CareVoice AI nhắc bác hai việc hôm nay: uống thuốc và nghe lời khuyên sức khỏe.";
+"patient.daily_tip.title" = "Lời khuyên hôm nay";
+"patient.daily_tip.title_short" = "Lời khuyên";
+"patient.daily_tip.loading" = "Đang chuẩn bị lời khuyên cho bác...";
+"patient.daily_tip.disclaimer" = "Lời khuyên chỉ mang tính gợi ý sinh hoạt. Bác vẫn làm theo đơn thuốc và hướng dẫn của bác sĩ.";
+"patient.daily_tip.listen" = "Nghe lại lời khuyên";
+"patient.daily_tip.done" = "Đã nghe, cảm ơn";
 "patient.checkin.analysis_hints_title" = "Gợi ý phân tích giọng nói";
 "patient.caregiver_notified.title" = "Đã báo người nhà";
 "patient.caregiver_notified.body" = "Hệ thống đã gửi tin nhắn cho người nhà biết bác cần được theo dõi thêm.";
 "patient.caregiver_notified.body_named" = "Đã gửi tin nhắn cho %@ biết bác cần được theo dõi thêm.";
-"patient.checkin.voice_ok" = "Cảm ơn bác. Tình trạng ổn định. Bác tiếp tục uống thuốc đúng giờ nhé.";
-"patient.checkin.voice_attention" = "Cảm ơn bác. Điều dưỡng sẽ xem lại và gọi cho bác hoặc người nhà sớm.";
+"patient.checkin.voice_ok" = "Check-in hôm nay thành công. Cảm ơn bác.";
+"patient.checkin.voice_attention" = "Check-in hôm nay thành công. Điều dưỡng sẽ xem lại và gọi cho bác hoặc người nhà sớm.";
 "patient.checkin.listen_result" = "Nghe lại kết quả";
