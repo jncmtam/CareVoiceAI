@@ -17,11 +17,12 @@
 ### 1. Clone & cài backend (1 lệnh)
 
 ```bash
-git clone https://github.com/jncmtam/CareVoiceAI && cd HackAIthon
-make setup
+git clone https://github.com/jncmtam/CareVoiceAI && cd CareVoiceAI
+
+make backend
 ```
 
-Tạo file env (nếu chưa có):
+Tạo file env (điền thông tin API Key vào .env):
 
 ```bash
 cp backend/.env.example backend/.env
