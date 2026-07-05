@@ -9,6 +9,7 @@ Bộ tài liệu dùng cho phát triển, demo hackathon và thuyết trình. **
 | [SYSTEM_OVERVIEW.md](SYSTEM_OVERVIEW.md) | Kiến trúc hệ thống, thành phần, luồng dữ liệu |
 | [FEATURES_AND_FLOWS.md](FEATURES_AND_FLOWS.md) | Chức năng chi tiết theo vai trò bệnh nhân / điều dưỡng |
 | [PRODUCT_PITCH_SOLO.md](PRODUCT_PITCH_SOLO.md) | Script thuyết trình **1 người** (~4–5 phút) |
+| [DEMO_PITCH_SCRIPT.md](DEMO_PITCH_SCRIPT.md) | **Script demo pitch đầy đủ** (~6–7 phút, cover toàn tính năng + giá trị AI) |
 | [SETUP_AND_ACCOUNTS.md](SETUP_AND_ACCOUNTS.md) | Chạy backend, iOS, tài khoản, chế độ demo |
 | [API_CONTRACT.md](API_CONTRACT.md) | Hợp đồng REST API (iOS ↔ backend) |
 | [IOS_SCREEN_MAP.md](IOS_SCREEN_MAP.md) | Map màn hình iOS |

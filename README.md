@@ -4,6 +4,8 @@
 
 **Flow demo chính:** Bệnh nhân check-in → AI phân tích giọng/chữ → kết quả nguy cơ → điều dưỡng thấy timeline ưu tiên.
 
+**Demo pitch:** [docs/DEMO_PITCH_SCRIPT.md](docs/DEMO_PITCH_SCRIPT.md) — chạy trước: `make pitch-preflight`
+
 ## Quick Start
 
 ### Yêu cầu

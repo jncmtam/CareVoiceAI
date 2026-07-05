@@ -1,4 +1,4 @@
-.PHONY: help setup backend test smoke patient-flow demo-check docker-up docker-down clean
+.PHONY: help setup backend test smoke patient-flow demo-check pitch-preflight docker-up docker-down clean
 
 help:
 	@echo "CareVoice AI — lệnh nhanh"
@@ -9,6 +9,7 @@ help:
 	@echo "  make smoke        Smoke test flow chính (cần API đang chạy)"
 	@echo "  make patient-flow Test luồng bệnh nhân (cần API đang chạy)"
 	@echo "  make demo-check   Pytest + smoke + patient-flow × 3 lần"
+	@echo "  make pitch-preflight  Kiểm tra trước demo pitch"
 	@echo "  make docker-up    Docker Compose (PostgreSQL + Redis + API)"
 	@echo "  make docker-down  Dừng Docker Compose"
 	@echo "  make clean        Xoá cache pytest/ruff local"
@@ -32,6 +33,9 @@ patient-flow:
 
 demo-check:
 	./scripts/run_submission_checks.sh
+
+pitch-preflight:
+	./scripts/demo_pitch_preflight.sh
 
 docker-up:
 	cd backend && docker compose up --build -d
